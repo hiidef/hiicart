@@ -69,7 +69,7 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
             if type(v) == list:
                 response_dict[k] = v[0]
         if response_dict['ACK'] != 'Success':
-            raise GatewayError("Error calling Paypal %s" % method)
+            raise GatewayError("Error calling Paypal Express %s" % method)
         return response_dict
 
     def _create_redirect_url(self, token):
