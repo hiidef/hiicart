@@ -100,7 +100,14 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
 
         # Urls for returning user after leaving Paypal
         if self.settings.get('RETURN_URL'):
-            params['returnurl'] = self.settings['RETURN_URL']
+            return_url = self.settings['RETURN_URL']
+            if '?' in return_url:
+                return_url += '&cart='
+            else:
+                return_url += '?cart='
+            return_url += self.cart._cart_uuid
+            params['returnurl'] = return_url
+
         if self.settings.get('CANCEL_URL'):
             params['cancelurl'] = self.settings['CANCEL_URL']
 
@@ -287,6 +294,11 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
         else:
             # No confirm_url specified, so assume we go straight to finalizing the order
             url = self.settings["FINALIZE_URL"]
+        if '?' in url:
+            url += '&cart='
+        else:
+            url += '?cart='
+        url += self.cart._cart_uuid
 
         session_args = {
             'hiicart_paypal_express_token': token,
@@ -355,19 +367,23 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
         """
         Refund the full amount of this payment
         """
-        self.refund(payment.transaction_id, payment.amount, reason)
+        self.refund(payment, payment.amount, reason)
         payment.state = 'REFUND'
         payment.save()
 
-    def refund(self, transaction_id, amount, reason=None):
+    def refund(self, payment, amount, reason=None):
         """Refund a payment."""
-        params = {
-            'transactionid': transaction_id,
-            'refundtype': 'Full',
-        }
+        params = {'transactionid': payment.transaction_id}
+        if payment.amount == amount:
+            params['refundtype'] = 'Full'
+        else:
+            params.update({
+                'refundtype': 'Partial',
+                'amt': str(amount.quantize(Decimal('.01')))
+            })
+
         self._do_nvp('RefundTransaction', params)
         return SubmitResult(None)
-
 
     def charge_recurring(self, grace_period=None):
         """This Paypal API doesn't support manually charging subscriptions."""

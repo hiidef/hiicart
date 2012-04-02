@@ -13,6 +13,7 @@ PAYMENT_FIELDS = {'credit_card__number': 'x_card_num',
                   'billing__region': 'x_state',
                   'billing__postal_code': 'x_zip',
                   'billing__country_code_alpha2': 'x_country',
+                  'customer__phone': 'x_phone',
                   'shipping__first_name': 'x_ship_to_first_name',
                   'shipping__last_name': 'x_ship_to_last_name',
                   'shipping__street_address': 'x_ship_to_address',
@@ -53,6 +54,7 @@ class PaymentForm(forms.Form):
     x_state = forms.CharField(max_length=50)
     x_zip = forms.CharField(max_length=30)
     x_country = forms.CharField(max_length=2)
+    x_phone = forms.CharField(max_length=30)
     x_ship_to_first_name = forms.CharField(max_length=255)
     x_ship_to_last_name = forms.CharField(max_length=255)
     x_ship_to_address = forms.CharField(max_length=80)

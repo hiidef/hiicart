@@ -40,3 +40,15 @@ def cart_by_uuid(uuid):
             return Cart.objects.get(_cart_uuid=uuid)
         except Cart.DoesNotExist:
             pass
+
+def cart_by_email(email):
+    for Cart in CART_TYPES:
+        try:
+            return Cart.objects.get(bill_email=email)
+        except Cart.DoesNotExist:
+            pass
+    for Cart in CART_TYPES:
+        try:
+            return Cart.objects.get(ship_email=email)
+        except Cart.DoesNotExist:
+            pass

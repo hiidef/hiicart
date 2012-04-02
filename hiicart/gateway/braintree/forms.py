@@ -87,6 +87,7 @@ def make_form(is_recurring=False):
         prefix+'credit_card__cvv': forms.CharField(min_length=3, max_length=4),
         prefix+'credit_card__expiration_month': forms.ChoiceField(choices=EXPIRATION_MONTH_CHOICES, initial=datetime.now().month),
         prefix+'credit_card__expiration_year': forms.ChoiceField(choices=EXPIRATION_YEAR_CHOICES),
+        prefix+'customer__phone': forms.CharField(max_length=30),
     }
 
     if prefix == 'transaction__':

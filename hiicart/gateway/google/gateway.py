@@ -64,8 +64,8 @@ class GoogleGateway(PaymentGatewayBase):
         self.cart.update_state()
         return CancelResult(None)
 
-    def cancel_recurring(self, payment, items=None, reason=None):
-        return self.cancel_items(payment, items, reason)
+    def cancel_recurring(self):
+        return self.cancel_items(self.cart.payments.filter(state='PAID').order_by('-created')[0]))
 
     def charge_recurring(self, grace_period=None):
         """HiiCart doesn't currently support manually charging subscriptions with Google Checkout"""
@@ -104,16 +104,16 @@ class GoogleGateway(PaymentGatewayBase):
         """
         Refund the full amount of this payment
         """
-        self.refund(payment.transaction_id, payment.amount, reason)
+        self.refund(payment, payment.amount, reason)
         payment.state = 'REFUND'
         payment.save()
 
-    def refund(self, transaction_id, amount, reason=None):
+    def refund(self, payment, amount, reason=None):
         """Refund a payment."""
         self._update_with_cart_settings({'request': None})
 
         template = loader.get_template("gateway/google/refund.xml")
-        ctx = Context({"transaction_id": transaction_id,
+        ctx = Context({"transaction_id": payment.transaction_id,
                        "reason": reason,
                        "comment": None,
                        "currency": self.settings["CURRENCY"],

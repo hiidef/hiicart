@@ -75,6 +75,7 @@ class BraintreeIPN(IPNBase):
         self.cart.ship_state = transaction.shipping["region"] or self.cart.ship_state
         self.cart.ship_postal_code = transaction.shipping["postal_code"] or self.cart.ship_postal_code
         self.cart.ship_country = transaction.shipping["country_code_alpha2"] or self.cart.ship_country
+        self.cart.ship_phone = transaction.customer["phone"] or self.cart.ship_phone
         self.cart.bill_first_name = transaction.billing["first_name"] or self.cart.bill_first_name
         self.cart.bill_last_name = transaction.billing["last_name"] or self.cart.bill_last_name
         self.cart.bill_street1 = transaction.billing["street_address"] or self.cart.bill_street1
@@ -83,6 +84,7 @@ class BraintreeIPN(IPNBase):
         self.cart.bill_state = transaction.billing["region"] or self.cart.bill_state
         self.cart.bill_postal_code = transaction.billing["postal_code"] or self.cart.bill_postal_code
         self.cart.bill_country = transaction.billing["country_code_alpha2"] or self.cart.bill_country
+        self.cart.bill_phone = transaction.customer["phone"] or self.cart.bill_phone
         self.cart._cart_state = "SUBMITTED"
         self.cart.save()
         return self._record_payment(transaction)

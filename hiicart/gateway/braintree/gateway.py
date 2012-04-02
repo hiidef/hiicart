@@ -11,9 +11,9 @@ from hiicart.gateway.braintree.tasks import update_payment_status
 
 log = logging.getLogger('hiicart.gateway.braintree.gateway')
 
+
 class BraintreeGateway(PaymentGatewayBase):
     """Payment Gateway for Braintree."""
-
 
     def __init__(self, cart):
         super(BraintreeGateway, self).__init__("braintree", cart, default_settings)
@@ -24,17 +24,14 @@ class BraintreeGateway(PaymentGatewayBase):
                                           self.settings["MERCHANT_KEY"],
                                           self.settings["MERCHANT_PRIVATE_KEY"])
 
-
     def _is_valid(self):
         """Return True if gateway is valid."""
         # TODO: Query Braintree to validate credentials
         return True
 
-
     @property
     def is_recurring(self):
         return len(self.cart.recurring_lineitems) > 0
-
 
     @property
     def environment(self):
@@ -44,19 +41,16 @@ class BraintreeGateway(PaymentGatewayBase):
         else:
             return braintree.Environment.Sandbox
 
-
     def submit(self, collect_address=False, cart_settings_kwargs=None, submit=False):
         """
         Simply returns the gateway type to let the frontend know how to proceed.
         """
         return SubmitResult("direct")
 
-
     @property
     def form(self):
         """Returns an instance of PaymentForm."""
         return make_form(self.is_recurring)()
-
 
     def start_transaction(self, request):
         """
@@ -90,7 +84,6 @@ class BraintreeGateway(PaymentGatewayBase):
                 redirect_url)
         return tr_data
 
-
     def confirm_payment(self, request, gateway_dict=None):
         """
         Confirms payment result with Braintree.
@@ -105,7 +98,7 @@ class BraintreeGateway(PaymentGatewayBase):
             result = braintree.TransparentRedirect.confirm(request.META['QUERY_STRING'])
         except Exception, e:
             errors = {'non_field_errors': 'Request to payment gateway failed.'}
-            return result_class(transaction_id=None, 
+            return result_class(transaction_id=None,
                                 success=False, status=None, errors=errors,
                                 gateway_result=None)
 
@@ -125,7 +118,7 @@ class BraintreeGateway(PaymentGatewayBase):
                 gateway_result = result
             if created:
                 return result_class(transaction_id=transaction_id,
-                                    success=True, status=status, 
+                                    success=True, status=status,
                                     gateway_result=gateway_result)
 
         errors = {}
@@ -146,17 +139,15 @@ class BraintreeGateway(PaymentGatewayBase):
                 for error in result.errors.deep_errors:
                     errors[error.attribute] = error.message
 
-        return result_class(transaction_id=transaction_id, 
+        return result_class(transaction_id=transaction_id,
                             success=False, status=status, errors=errors,
                             gateway_result=result)
-
 
     def update_payment_status(self, transaction_id):
         try:
             update_payment_status.apply_async(args=[self.cart.id, transaction_id], countdown=300)
         except Exception, e:
             log.error("Error updating payment status for transaction %s: %s" % (transaction_id, e))
-
 
     def create_discount_args(self, discount_id, num_billing_cycles=1, quantity=1, existing_discounts=None):
         if not existing_discounts:
@@ -186,14 +177,13 @@ class BraintreeGateway(PaymentGatewayBase):
             }
 
         return args
-    
 
     def apply_discount(self, subscription_id, discount_id, num_billing_cycles=1, quantity=1):
         """
         Apply a discount to an existing subscription.
         """
         subscription = braintree.Subscription.find(subscription_id)
-        existing_discounts = filter(lambda d: d.id==discount_id, subscription.discounts)
+        existing_discounts = filter(lambda d: d.id == discount_id, subscription.discounts)
         args = self.create_discount_args(discount_id, num_bulling_cycles, quantity, existing_discounts)
         result = braintree.Subscription.update(subscription_id, args)
         errors = {}
@@ -207,7 +197,6 @@ class BraintreeGateway(PaymentGatewayBase):
                                   success=result.is_success, status=status, errors=errors,
                                   gateway_result=result)
 
-        
     def cancel_recurring(self):
         """
         Cancel a cart's subscription.
@@ -220,14 +209,13 @@ class BraintreeGateway(PaymentGatewayBase):
                                   success=result.is_success, status=result.subscription.status,
                                   gateway_result=result)
 
-
     def charge_recurring(self, grace_period=None):
         """
         Charge a cart's recurring item, if necessary.
         NOTE: Currently only one recurring item is supported per cart,
               so charge the first one found.
         We use braintree's subscriptions for recurring billing, so we don't manually
-        charge recurring payments. Instead, we poll braintree to get new 
+        charge recurring payments. Instead, we poll braintree to get new
         payments/transactions.
         """
         if not grace_period:
@@ -243,3 +231,94 @@ class BraintreeGateway(PaymentGatewayBase):
         for t in transactions:
             handler.accept_payment(t)
 
+    def start_update(self, request):
+        """
+        Start the process of updating payment information for a subscription.
+        """
+        if not self.is_recurring:
+            raise NotImplementedError("Only recurring subscriptions can be updated")
+
+        redirect_url = request.build_absolute_uri(request.path)
+
+        subscription_id = self.cart.recurring_lineitems[0].payment_token
+        subscription = braintree.Subscription.find(subscription_id)
+        payment_method_token = subscription.payment_method_token
+        customers = braintree.Customer.search(braintree.CustomerSearch.payment_method_token == payment_method_token)
+        customers = list(customers.items)
+        customer = customers[0]
+
+        tr_data = braintree.Customer.tr_data_for_update({
+            'customer_id': customer.id,
+            'customer': {
+                'credit_card': {
+                    'options': {
+                        'verify_card': True,
+                        'make_default': True
+                    }
+                }
+            }
+        }, redirect_url)
+
+        return tr_data
+
+    def confirm_update(self, request):
+        """
+        Confirms credit card update result with Braintree.
+        """
+        try:
+            result = braintree.TransparentRedirect.confirm(request.META['QUERY_STRING'])
+        except Exception, e:
+            errors = {'non_field_errors': 'Request to payment gateway failed.'}
+            return SubscriptionResult(transaction_id=None,
+                                success=False, status=None, errors=errors,
+                                gateway_result=None)
+
+        if result.is_success:
+            subscription_id = self.cart.recurring_lineitems[0].payment_token
+            for cc in result.customer.credit_cards:
+                if cc.default:
+                    payment_method_token = cc.token
+            sub_result = braintree.Subscription.update(subscription_id, {
+                'payment_method_token': payment_method_token
+            })
+            return SubscriptionResult(transaction_id=None,
+                    success=True, status='success', gateway_result=result)
+
+        errors = {}
+        status = None
+        verification = getattr(result, 'credit_card_verification', None)
+        if verification:
+            status = getattr(obj, 'status', None)
+            if status == 'processor_declined':
+                errors = {'non_field_errors': getattr(obj, 'processor_response_text', 'There was an error communicating with the gateway')}
+            elif status == 'gateway_rejected':
+                errors = {'non_field_errors': getattr(obj, 'gateway_rejection_reason', 'The card was declined')}
+        else:
+            message = getattr(result, 'message', None)
+            errors = {'non_field_errors': message}
+            if result.errors:
+                for error in result.errors.deep_errors:
+                    errors[error.attribute] = error.message
+
+        return SubscriptionResult(transaction_id=None,
+                            success=False, status=status, errors=errors,
+                            gateway_result=result)
+
+    def change_subscription_amount(self, subscription_id, new_price):
+        result = braintree.Subscription.update(subscription_id, {
+            'price': new_price,
+            'options': {
+                'prorate_charged': True,
+                'revert_subscription_on_proration_failure': False
+            }
+        })
+        return SubscriptionResult(transaction_id=None, success=result.is_success, status=None, errors={}, gateway_result=result)
+
+    def refund_payment(self, payment, reason=None):
+        self.refund(payment, payment.amount)
+        payment.state = 'REFUND'
+        payment.save()
+
+    def refund(self, payment, amount, reason=None):
+        result = braintree.Transaction.refund(payment.transaction_id, amount)
+        return SubscriptionResult(transaction_id=None, success=result.is_success, status=None, errors={}, gateway_result=result)
