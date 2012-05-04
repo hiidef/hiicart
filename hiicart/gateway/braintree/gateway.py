@@ -8,6 +8,7 @@ from hiicart.gateway.braintree.forms import make_form
 from hiicart.gateway.braintree.ipn import BraintreeIPN
 from hiicart.gateway.braintree.settings import SETTINGS as default_settings
 from hiicart.gateway.braintree.tasks import update_payment_status
+from hiicart.models import HiiCart
 
 log = logging.getLogger('hiicart.gateway.braintree.gateway')
 
@@ -143,9 +144,9 @@ class BraintreeGateway(PaymentGatewayBase):
                             success=False, status=status, errors=errors,
                             gateway_result=result)
 
-    def update_payment_status(self, transaction_id):
+    def update_payment_status(self, transaction_id, cart_class=HiiCart):
         try:
-            update_payment_status.apply_async(args=[self.cart.id, transaction_id], countdown=300)
+            update_payment_status.apply_async(args=[self.cart.id, transaction_id], kwargs={'cart_class': cart_class}, countdown=300)
         except Exception, e:
             log.error("Error updating payment status for transaction %s: %s" % (transaction_id, e))
 
@@ -315,10 +316,13 @@ class BraintreeGateway(PaymentGatewayBase):
         return SubscriptionResult(transaction_id=None, success=result.is_success, status=None, errors={}, gateway_result=result)
 
     def refund_payment(self, payment, reason=None):
-        self.refund(payment, payment.amount)
+        result = self.refund(payment, payment.amount)
         payment.state = 'REFUND'
         payment.save()
+        return result
 
     def refund(self, payment, amount, reason=None):
         result = braintree.Transaction.refund(payment.transaction_id, amount)
-        return SubscriptionResult(transaction_id=None, success=result.is_success, status=None, errors={}, gateway_result=result)
+        if result.is_success:
+            self._create_payment(amount * -1, result.transaction.id, 'REFUND')
+        return TransactionResult(transaction_id=result.transaction.id, success=result.is_success, status=None, errors={}, gateway_result=result)

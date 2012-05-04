@@ -37,7 +37,7 @@ class AuthorizeNetIPN(IPNBase):
 
     def __init__(self, cart):
         super(AuthorizeNetIPN, self).__init__("authorizenet", cart, default_settings)
-        self._require_settings(["MERCHANT_ID", "MERCHANT_KEY", 
+        self._require_settings(["MERCHANT_ID", "MERCHANT_KEY",
                                 "MERCHANT_PRIVATE_KEY"])
 
     def confirm_ipn_data(self, data):

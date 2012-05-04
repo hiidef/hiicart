@@ -9,9 +9,9 @@ log = logging.getLogger('hiicart.gateway.braintree.tasks')
 
 
 @task
-def update_payment_status(hiicart_id, transaction_id, tries=0):
+def update_payment_status(hiicart_id, transaction_id, tries=0, cart_class=HiiCart):
     """Check the payment status of a Braintree transaction."""
-    hiicart = HiiCart.objects.get(pk=hiicart_id)
+    hiicart = cart_class.objects.get(pk=hiicart_id)
     handler = BraintreeIPN(hiicart)
     done = handler.update_order_status(transaction_id)
     # Reschedule the failed payment to run in 4 hours
@@ -23,5 +23,6 @@ def update_payment_status(hiicart_id, transaction_id, tries=0):
             tries = tries + 1
             update_payment_status.apply_async(args=[hiicart_id,
                                                     transaction_id,
-                                                    tries],
+                                                    tries,
+                                                    cart_class],
                                               countdown=14400)

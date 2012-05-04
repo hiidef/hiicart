@@ -378,7 +378,7 @@ class HiiCartBase(models.Model):
         self.gateway = gateway_name
         self.save()
         result = gateway.submit(collect_address, cart_settings_kwargs)
-        if result.type is not "direct":
+        if result and result.type is not "direct":
             self.set_state("SUBMITTED")
         return result
 

@@ -29,6 +29,16 @@ def ipn(request):
     if request.method != "POST":
         return HttpResponse("Requests must be POSTed")
     data = request.POST.copy()
+    # Authorize sends us info urlencoded as latin1
+    # So, if we end up with the unicode char in our processed POST that means
+    # "unknown char" (\ufffd), try to transcode from latin1
+    parsed_raw = parse_qs(request.raw_post_data)
+    for key, value in data.iteritems():
+        if u'\ufffd' in value:
+            try:
+                data.update({key: unicode(unquote_plus(parsed_raw[key][-1]), 'latin1')})
+            except:
+                pass
     log.info("IPN Notification received from Authorize.net: %s" % data)
     try:
         log.info("IPN Notification received from Authorize.net (raw): %s" % request.raw_post_data)
@@ -51,7 +61,7 @@ def ipn(request):
     gateway.set_response(data)
 
     # Return the user back to the store front
-    response = render_to_response('gateway/authorizenet/ipn.html', 
+    response = render_to_response('gateway/authorizenet/ipn.html',
                                   {'return_url': data['return_url']})
     response['Location'] = data['return_url']
     return response

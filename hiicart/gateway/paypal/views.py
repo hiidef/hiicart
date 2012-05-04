@@ -80,7 +80,7 @@ def _base_paypal_ipn_listener(request, ipn_class):
         log.info("Unknown IPN type or status. Type: %s\tStatus: %s" %
                  (txn_type, status))
     return HttpResponse()
-    
+
 
 @csrf_view_exempt
 @format_exceptions
