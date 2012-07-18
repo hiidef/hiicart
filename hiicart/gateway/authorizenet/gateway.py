@@ -59,7 +59,7 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                                          timestamp, timestamp, self.cart.total)
         fp_hash = hmac.new(str(self.settings['MERCHANT_KEY']), hash_message)
         data = {'submit_url': self.submit_url,
-                'return_url': request.build_absolute_uri(),
+                'return_url': request.build_absolute_uri(request.path),
                 'cart_id': self.cart.cart_uuid,
                 'x_invoice_num': timestamp,
                 'x_fp_hash': fp_hash.hexdigest(),
