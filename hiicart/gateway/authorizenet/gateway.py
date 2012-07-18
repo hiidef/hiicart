@@ -59,7 +59,7 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                                          timestamp, timestamp, self.cart.total)
         fp_hash = hmac.new(str(self.settings['MERCHANT_KEY']), hash_message)
         data = {'submit_url': self.submit_url,
-                'return_url': request.build_absolute_uri(request.path),
+                'return_url': request.build_absolute_uri(),
                 'cart_id': self.cart.cart_uuid,
                 'x_invoice_num': timestamp,
                 'x_fp_hash': fp_hash.hexdigest(),
@@ -72,6 +72,8 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                 'x_method': 'CC',
                 'x_type': 'AUTH_CAPTURE',
                 'x_version': '3.1'}
+        if request.META.get('HTTP_X_FORWARDED_PROTO') == 'https':
+            data['return_url'] = data['return_url'].replace('http:', 'https:')
         if not self.settings['LIVE']:
             # Set this value to false to get a real transaction # returned when running on
             # sandbox.  A real transaction is required to for testing refunds.
