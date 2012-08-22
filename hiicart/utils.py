@@ -34,6 +34,13 @@ def format_exceptions(method):
     return wrapper
 
 
+def cart_by_id(id):
+    for Cart in CART_TYPES:
+        try:
+            return Cart.objects.get(pk=id)
+        except Cart.DoesNotExist:
+            pass
+
 def cart_by_uuid(uuid):
     for Cart in CART_TYPES:
         try:

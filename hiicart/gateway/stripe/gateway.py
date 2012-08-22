@@ -3,6 +3,7 @@ import stripe as stripe_api
 import logging
 from django import forms
 from hiicart.gateway.base import PaymentGatewayBase, SubmitResult, TransactionResult
+from hiicart.gateway.stripe.ipn import StripeIPN
 from hiicart.gateway.stripe.forms import PaymentForm, FORM_MODEL_TRANSLATION
 from hiicart.gateway.stripe.settings import SETTINGS as default_settings
 
@@ -78,9 +79,9 @@ class StripeGateway(PaymentGatewayBase):
                 charge = stripe_api.Charge.create(
                     api_key=self.settings['PRIVATE_KEY'],
                     amount=int(self.cart.total * 100), # amount in cents
-                    currency="usd", # TODO
+                    currency="usd",
                     card=token,
-                    description=self.cart.cart_uuid
+                    description=str(self.cart.id)
                 )
             except stripe_api.StripeError as e:
                 return TransactionResult(
@@ -91,6 +92,9 @@ class StripeGateway(PaymentGatewayBase):
 
             self.cart._cart_state = "SUBMITTED"
             self.cart.save()
+
+            handler = StripeIPN(self.cart)
+            handler.accept_payment(charge)
 
             return TransactionResult(
                 transaction_id=charge.id,
