@@ -81,7 +81,7 @@ class StripeGateway(PaymentGatewayBase):
                     amount=int(self.cart.total * 100), # amount in cents
                     currency="usd",
                     card=token,
-                    description=str(self.cart.id)
+                    description="Order #%s (%s)" % (self.cart.id, self.cart.bill_email)
                 )
             except stripe_api.StripeError as e:
                 return TransactionResult(
