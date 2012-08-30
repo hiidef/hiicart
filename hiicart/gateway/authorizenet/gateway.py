@@ -103,7 +103,10 @@ class AuthorizeNetGateway(PaymentGatewayBase):
             data['return_url'] = urlparse.urljoin(data['return_url'], "payment_thanks")
         else:
             # Mimic the braintree redirect behavior of appending http_status to the query string
-            data['return_url'] = data['return_url'] + "?http_status=200"
+            if '?' in data['return_url']:
+                data['return_url'] = data['return_url'] + '&http_status=200'
+            else:
+                data['return_url'] = data['return_url'] + "?http_status=200"
 
     def confirm_payment(self, request):
         """
