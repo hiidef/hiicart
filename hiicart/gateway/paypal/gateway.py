@@ -155,6 +155,8 @@ class PaypalGateway(PaymentGatewayBase):
             submit["cancel_return"] = self.settings["CANCEL_RETURN"]
         if self.settings.get("CBT"):
             submit["cbt"] = self.settings["CBT"]
+        if self.settings.get("BN"):
+            submit["bn"] = self.settings["BN"]
         #TODO: eventually need to work out the terrible PayPal shipping stuff
         #      for now, we are saying "no shipping" and adding all shipping as
         #      a handling charge.
