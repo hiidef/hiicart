@@ -14,8 +14,10 @@ log = logging.getLogger("hiicart.gateway.amazon")
 
 def _find_cart(request_data):
     # Subscription payments look like '<uuid>-4' so grab the uuid id
-    uuid = request_data["callerReference"][:36]
-    return cart_by_uuid(uuid)
+    if 'callerReference' in request_data and len(request_data['callerReference']) >= 36:
+        uuid = request_data["callerReference"][:36]
+        return cart_by_uuid(uuid)
+    return None
 
 
 @csrf_view_exempt
@@ -31,7 +33,7 @@ def cbui(request, settings=None):
     log.debug("CBUI Received: \n%s" % pprint.pformat(dict(request.GET), indent=10))
     if "errorMessage" in request.GET:
         raise Exception(request.GET["errorMessage"])
-    else:    
+    else:
         cart = _find_cart(request.GET)
     handler = AmazonIPN(cart)
     handler._update_with_cart_settings(cart_settings_kwargs={'request': request})
