@@ -61,6 +61,8 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
         params_dict['pwd'] = self.settings['API_PASSWORD']
         params_dict['signature'] = self.settings['API_SIGNATURE']
         params_dict['version'] = self.settings['API_VERSION']
+        if self.settings.get("BN"):
+            params_dict["bn"] = self.settings["BN"]
         encoded_params = urllib.urlencode(params_dict)
 
         response, content = http.request(self._nvp_url, 'POST', encoded_params)

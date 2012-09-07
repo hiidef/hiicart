@@ -185,7 +185,7 @@ class BraintreeGateway(PaymentGatewayBase):
         """
         subscription = braintree.Subscription.find(subscription_id)
         existing_discounts = filter(lambda d: d.id == discount_id, subscription.discounts)
-        args = self.create_discount_args(discount_id, num_bulling_cycles, quantity, existing_discounts)
+        args = self.create_discount_args(discount_id, num_billing_cycles, quantity, existing_discounts)
         result = braintree.Subscription.update(subscription_id, args)
         errors = {}
         if result.is_success:
