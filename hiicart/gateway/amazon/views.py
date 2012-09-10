@@ -4,10 +4,9 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadReque
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_view_exempt
 from hiicart.gateway.amazon.ipn import AmazonIPN
-from hiicart.gateway.base import GatewayError
 from hiicart.gateway.countries import COUNTRIES
 from hiicart.utils import format_exceptions, cart_by_uuid
-
+from hiicart.models import HiiCart
 
 log = logging.getLogger("hiicart.gateway.amazon")
 
@@ -35,6 +34,13 @@ def cbui(request, settings=None):
         raise Exception(request.GET["errorMessage"])
     else:
         cart = _find_cart(request.GET)
+    if not cart:
+        log.error("Unable to find cart.")
+        cart = HiiCart()
+        handler = AmazonIPN(cart)
+        cart = None
+        return HttpResponseRedirect(handler.settings.get("ERROR_RETURN_URL",
+                                    handler.settings.get("RETURN_URL", "/")))
     handler = AmazonIPN(cart)
     handler._update_with_cart_settings(cart_settings_kwargs={'request': request})
     if not cart:
