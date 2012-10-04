@@ -1,17 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Braintree Gateway"""
+
 import logging
 import braintree
 
 from django.template import Context, loader
 
-from hiicart.gateway.base import PaymentGatewayBase, CancelResult, SubmitResult, TransactionResult, SubscriptionResult, GatewayError
+from hiicart.gateway.base import PaymentGatewayBase, CancelResult, SubmitResult,\
+        TransactionResult, SubscriptionResult, GatewayError
 from hiicart.gateway.braintree.forms import make_form
 from hiicart.gateway.braintree.ipn import BraintreeIPN
 from hiicart.gateway.braintree.settings import SETTINGS as default_settings
 from hiicart.gateway.braintree.tasks import update_payment_status
 from hiicart.models import HiiCart
 
-log = logging.getLogger('hiicart.gateway.braintree.gateway')
-
+logger = logging.getLogger('hiicart.gateway.braintree.gateway')
 
 class BraintreeGateway(PaymentGatewayBase):
     """Payment Gateway for Braintree."""
@@ -148,7 +153,7 @@ class BraintreeGateway(PaymentGatewayBase):
         try:
             update_payment_status.apply_async(args=[self.cart.id, transaction_id], kwargs={'cart_class': cart_class}, countdown=300)
         except Exception, e:
-            log.error("Error updating payment status for transaction %s: %s" % (transaction_id, e))
+            logger.error("Error updating payment status for transaction %s: %s" % (transaction_id, e))
 
     def create_discount_args(self, discount_id, num_billing_cycles=1, quantity=1, existing_discounts=None):
         if not existing_discounts:

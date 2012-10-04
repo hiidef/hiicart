@@ -8,7 +8,7 @@ Google Checkout, Amazon Payments, Authorize.net, and Braintree.
 Installation and Setup
 ----------------------
 
-Installation is as easy as installing with easy_install or pip and
+Installation is as easy as installing with `easy_install` or `pip` and
 adding the appropriate settings for the gateways you want to use.  Please see
 the documentation in hiicart/settings.py for more details about the settings
 available.
@@ -24,6 +24,50 @@ Once set up, create LineItem and HiiCart objects to submit payments:
         return cart.submit("google")
 
 This returns an object containing the redirect URL for you user.
+
+Logging
+--------
+
+Older versions of HiiCart used to have logging configurable through the
+`HIICART_SETTINGS` object's `LOG` and `LOG_LEVEL` keys.  This has been removed
+in favor of using [Django's built-in logging configuration](https://docs.djangoproject.com/en/dev/topics/logging/#an-example)
+or manual configuration of the "hiicart" logger elsewhere in application code.
+
+To maintain the same configuration as old versions of HiiCart, use something
+similar to the following in your `settings.py`:
+
+```python
+LOGGING = {
+    ...
+    "formatters": {
+        ...
+        "hiicart": {
+            "format": "%(asctime)s [%(levelname)-8s] %(name)s - %(message)s",
+        },
+    },
+    "handlers": {
+        ...
+        "hiicart": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": ...,
+            "formatter": "hiicart",
+            "maxBytes": 5242880,
+            "backupCount": 10,
+            "encoding": "utf-8",
+        },
+    },
+    "loggers": {
+        ...
+        "hiicart": {
+            "handlers": ["hiicart"],
+            "level": "DEBUG",
+        },
+    },
+}
+```
+
+HiiCart will aggressively log events and IPN requests to this log in at the INFO
+level and errors at the ERROR level.
 
 Example App
 -----------

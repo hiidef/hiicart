@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+"""HiiCart Data Models."""
+
 import copy
 import django
 import logging
@@ -13,65 +17,60 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.safestring import mark_safe
 from hiicart.settings import SETTINGS as hiicart_settings
-from logging.handlers import RotatingFileHandler
 
-log = logging.getLogger("hiicart.models")
+logger = logging.getLogger("hiicart.models")
 
-### Set up library-wide logging
+SHIPPING_CHOICES = [
+    ("0", "No Shipping Charges"),
+    ("1", "Pay Shipping Once"),
+    ("2", "Pay Shipping Each Billing Cycle"),
+]
 
-if hiicart_settings["LOG"]:
-    level = hiicart_settings["LOG_LEVEL"]
-    logger = logging.getLogger("hiicart")
-    logger.setLevel(level)
-    ch = RotatingFileHandler(
-            hiicart_settings["LOG"],
-            maxBytes=5242880,
-            backupCount=10,
-            encoding="utf-8")
-    ch.setLevel(level)
-    formatter = logging.Formatter("%(asctime)s [%(levelname)-8s] %(name)s - %(message)s")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+SUBSCRIPTION_UNITS = [
+    ("DAY", "Days"),
+    ("MONTH", "Months"),
+]
 
-### Lists for field choices
+# TODO: some more documentation on what these states mean
 
-SHIPPING_CHOICES = (("0", "No Shipping Charges"),
-                    ("1", "Pay Shipping Once"),
-                    ("2", "Pay Shipping Each Billing Cycle"))
+HIICART_STATES = [
+    ("OPEN", "Open"),
+    ("SUBMITTED", "Submitted"),
+    ("ABANDONED", "Abandoned"),
+    ("COMPLETED", "Completed"),
+    # active subscription
+    ("RECURRING", "Recurring"),
+    # subscription cancelled at gateway but not expired yet
+    ("PENDCANCEL", "Pending Cancellation"),
+    ("REFUND", "Refunded"),
+    ("PARTREFUND", "Partially Refunded"),
+    ("CANCELLED", "Cancelled"),
+]
 
-SUBSCRIPTION_UNITS = (("DAY", "Days"),
-                      ("MONTH", "Months"))
+PAYMENT_STATES = [
+    ("PENDING", "Pending"),
+    ("PAID", "Paid"),
+    ("FAILED", "Failed"),
+    ("REFUND", "Refund"),
+    ("CANCELLED", "Cancelled"),
+]
 
-HIICART_STATES = (("OPEN", "Open"),
-                  ("SUBMITTED", "Submitted"),
-                  ("ABANDONED", "Abandoned"),
-                  ("COMPLETED", "Completed"),
-                  ("RECURRING", "Recurring"),  # Subscription active
-                  ("PENDCANCEL", "Pending Cancellation"),  # Subscription cancelled, but not expired yet
-                  ("REFUND", "Refunded"),
-                  ("PARTREFUND", "Partially Refunded"),
-                  ("CANCELLED", "Cancelled"))
+# valid state transitions for a cart;  if the current state is a key in this dict,
+# then the only valid new state is one in the value of that key
 
-PAYMENT_STATES = (("PENDING", "Pending"),
-                  ("PAID", "Paid"),
-                  ("FAILED", "Failed"),
-                  ("REFUND", "Refund"),
-                  ("CANCELLED", "Cancelled"))
+VALID_TRANSITIONS = {
+    "OPEN": ["SUBMITTED", "ABANDONED", "COMPLETED", "RECURRING", "PENDCANCEL", "CANCELLED"],
+    "SUBMITTED": ["COMPLETED", "RECURRING", "PENDCANCEL", "CANCELLED"],
+    "ABANDONED": [],
+    "COMPLETED": ["RECURRING", "PENDCANCEL", "CANCELLED", "REFUND", "PARTREFUND"],
+    "PARTREFUND": ["REFUND","CANCELLED"],
+    "REFUND": ["CANCELLED"],
+    "RECURRING": ["PENDCANCEL", "CANCELLED"],
+    "PENDCANCEL": ["CANCELLED"],
+    "CANCELLED": [],
+}
 
-# What state transitions are valid for a cart
-VALID_TRANSITIONS = {"OPEN": ["SUBMITTED", "ABANDONED", "COMPLETED",
-                              "RECURRING", "PENDCANCEL", "CANCELLED"],
-                     "SUBMITTED": ["COMPLETED", "RECURRING",
-                                   "PENDCANCEL", "CANCELLED"],
-                     "ABANDONED": [],
-                     "COMPLETED": ["RECURRING", "PENDCANCEL", "CANCELLED", "REFUND", "PARTREFUND"],
-                     "PARTREFUND": ["REFUND","CANCELLED"],
-                     "REFUND" : ["CANCELLED"],
-                     "RECURRING": ["PENDCANCEL", "CANCELLED"],
-                     "PENDCANCEL": ["CANCELLED"],
-                     "CANCELLED": []}
-
-# For automatic tracking of all cart types, see HiiCartMetaclass
+# storage for cart classes (classes whose meta is HiiCartMetaClass)
 CART_TYPES = []
 
 
@@ -87,8 +86,9 @@ class HiiCartMetaclass(models.base.ModelBase):
             attrs['recurring_lineitem_types'] = set()
             attrs['one_time_lineitem_types'] = set()
 
-            attrs['cart_state_changed'] = Signal(providing_args=["cart", "new_state",
-                                                                 "old_state"])
+            attrs['cart_state_changed'] = Signal(
+                providing_args=["cart", "new_state", "old_state"]
+            )
         except NameError:
             # This is HiiCartBase
             parents = False
@@ -632,7 +632,7 @@ class PaymentBase(models.Model):
 
     def save(self, *args, **kwargs):
         super(PaymentBase, self).save(*args, **kwargs)
-        log.warn('Payment saved %s => %s for payment_id: %s' % (self._old_state, self.state, self.id))
+        logger.warn('Payment saved %s => %s for payment_id: %s' % (self._old_state, self.state, self.id))
         # Signal sent after save in case someone queries database
         if self.state != self._old_state:
             self.payment_state_changed.send(sender=self.__class__.__name__, payment=self,
