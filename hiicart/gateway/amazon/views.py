@@ -59,6 +59,8 @@ def cbui(request, settings=None):
         return HttpResponseRedirect(handler.settings.get("CANCEL_RETURN_URL",
                                     handler.settings.get("RETURN_URL", "/")))
     # Address collection. Any data already in cart is assumed correct
+    # FIXME: should we be assuming data in the cart is correct?  does it matter?
+    # can a customer update a mistake in the shipping address after purchase?
     cart.bill_first_name = cart.bill_first_name or request.GET.get("billingName", "")
     cart.ship_first_name = cart.ship_first_name or request.GET.get("addressName", "")
     cart.bill_street1 = cart.bill_street1 or request.GET.get("addressLine1", "")
