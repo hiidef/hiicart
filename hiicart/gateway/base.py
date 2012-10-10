@@ -89,7 +89,7 @@ class IPNBase(_SharedBase):
     Provides shared functionality among IPN implementations
     """
     def __init__(self, *args, **kwargs):
-        super(IPNBase, self).__init__(self, *args, **kwargs)
+        super(IPNBase, self).__init__(*args, **kwargs)
         self.log = logging.getLogger("hiicart.gateway.%s.ipn" % self.name)
 
 
