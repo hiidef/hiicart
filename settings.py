@@ -10,13 +10,13 @@ MANAGERS = ADMINS
 DATABASES = {
     "default": {
         # "postgresql_psycopg2", "mysql", "sqlite3" or "oracle".
-        "ENGINE": "django.db.backends.sqlite3",
-        # Or path to database file if using sqlite3.
-        "NAME": "hiicart_test",
-        "USER": "",                      # Not used with sqlite3.
-        "PASSWORD": "",                  # Not used with sqlite3.
-        "HOST": "",                      # Set to empty string for localhost. Not used with sqlite3.
-        "PORT": "",                      # Set to empty string for default. Not used with sqlite3.
+        "engine": "django.db.backends.sqlite3",
+        # or path to database file if using sqlite3.
+        "name": "hiicart_test",
+        "user": "",                      # not used with sqlite3.
+        "password": "",                  # not used with sqlite3.
+        "host": "",                      # set to empty string for localhost. not used with sqlite3.
+        "port": "",                      # set to empty string for default. not used with sqlite3.
     }
 }
 
@@ -113,4 +113,12 @@ LOGGING = {
 }
 
 HIICART_SETTINGS = {}
+
+try:
+    from local_settings import *
+except ImportError:
+    print "%s: HiiCart's test suite will skip many tests without proper gateway configuration." % (
+            "\033[01;93mWarning\033[0m"
+    )
+    pass
 

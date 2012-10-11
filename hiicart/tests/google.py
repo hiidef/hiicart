@@ -9,10 +9,9 @@ from hiicart.models import HiiCart, LineItem, RecurringLineItem
 
 def has_required_settings():
     """Returns True if the Google gateway has settings, False otherwise."""
-    from hiicart.gateway.google.settings import SETTINGS
-    if not SETTINGS.get("MERCHANT_ID"):
-        return False
-    if not SETTINGS.get("MERCHANT_KEY"):
+    from hiicart.settings import SETTINGS
+    google = SETTINGS.get("GOOGLE", {})
+    if not google.get("MERCHANT_ID") and google.get("MERCHANT_KEY"):
         return False
     return True
 
