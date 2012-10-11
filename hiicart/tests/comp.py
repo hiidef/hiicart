@@ -10,6 +10,10 @@ from hiicart.models import HiiCart, LineItem, RecurringLineItem
 class CompTestCase(base.HiiCartTestCase):
     """Tests for COMP payment gateway."""
 
+    def setUp(self):
+        settings.HIICART_SETTINGS.setdefault("COMP", {})
+        super(CompTestCase, self).setUp()
+
     def test_submit(self):
         """Test submitting to COMP payment gateway."""
         self.assertEqual(self.cart.state, "OPEN")
