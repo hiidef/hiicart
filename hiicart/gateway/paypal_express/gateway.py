@@ -240,7 +240,7 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
         return params
 
     def _update_cart_details(self, details):
-        pre = 'paymentrequest_0_'
+        pre = 'PAYMENTREQUEST_0_'
 
         # Fill in shipping information
         property_names = {

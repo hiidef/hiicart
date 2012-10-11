@@ -21,7 +21,7 @@ class CompTestCase(base.HiiCartTestCase):
         self.assertEqual(self.cart.state, "OPEN")
         result = self.cart.submit("comp")
         self.assertEqual(result, None)
-        self.assertEqual(self.cart.state, "PAID")
+        self.assertEqual(self.cart.state, "COMPLETED")
 
     def test_submit_recurring(self):
         """Test submitting to COMP payment gateway."""
@@ -79,8 +79,10 @@ class CompTestCase(base.HiiCartTestCase):
         self.test_submit_recurring()
         self.cart.adjust_expiration(datetime.now()-timedelta(days=1))
         self.assertEqual(self.cart.payments.count(), 1)
+        # this should not charge anything because we're in the grace period
         self.cart.charge_recurring(grace_period=timedelta(days=2))
         self.assertEqual(self.cart.payments.count(), 1)
+        # now that we're outside the grace period, the charge should succeed
         self.cart.adjust_expiration(datetime.now()-timedelta(days=7))
         self.cart.charge_recurring(grace_period=timedelta(days=2))
         self.assertEqual(self.cart.payments.count(), 2)

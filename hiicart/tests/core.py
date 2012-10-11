@@ -6,12 +6,14 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 from hiicart.models import HiiCart, LineItem, RecurringLineItem
+from hiicart import settings as hsettings
 
 class HiiCartTestCase(base.HiiCartTestCase):
     """Basic tests to ensure HiiCart is working."""
 
     def _submit_recurring(self):
         settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
+        hsettings.SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
         self.assertEqual(self.cart.state, "OPEN")
         self._add_recurring_item()
         result = self.cart.submit("comp")
@@ -19,7 +21,8 @@ class HiiCartTestCase(base.HiiCartTestCase):
         self.assertEqual(self.cart.state, "RECURRING")
 
     def _submit_recurring_norecur(self):
-        settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] =False
+        settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = False
+        hsettings.SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = False
         self.assertEqual(self.cart.state, "OPEN")
         self._add_recurring_item()
         result = self.cart.submit("comp")
