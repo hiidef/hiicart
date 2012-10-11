@@ -6,6 +6,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 from hiicart.models import HiiCart, LineItem, RecurringLineItem
+from hiicart import settings as hsettings
+
 
 class CompTestCase(base.HiiCartTestCase):
     """Tests for COMP payment gateway."""
@@ -24,6 +26,7 @@ class CompTestCase(base.HiiCartTestCase):
     def test_submit_recurring(self):
         """Test submitting to COMP payment gateway."""
         settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
+        hsettings.SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
         self.assertEqual(self.cart.state, "OPEN")
         self._add_recurring_item()
         result = self.cart.submit("comp")
@@ -32,7 +35,8 @@ class CompTestCase(base.HiiCartTestCase):
 
     def test_submit_recurring_norecur(self):
         """Test submitting a recurring item with ALLOW_RECURRING_COMP = False"""
-        settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] =False 
+        settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = False
+        hsettings.SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = False
         self.assertEqual(self.cart.state, "OPEN")
         self._add_recurring_item()
         result = self.cart.submit("comp")
@@ -56,12 +60,14 @@ class CompTestCase(base.HiiCartTestCase):
     def test_charge_recurring(self):
         """
         Test charge recurring with and without grace period.
-        
+
         NOTE: The timedelta used to adjust the expireation is never the same
               as grace_period because there will be a slight mismatch of a
               few milliseconds where the adjusted expiration will still
               fall outside the grace period.
         """
+        settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
+        hsettings.SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
         cart_base = self.cart.clone()
         self.test_submit_recurring()
         self.cart.adjust_expiration(datetime.now()-timedelta(days=1))

@@ -100,8 +100,13 @@ class HiiCartTestCase(base.HiiCartTestCase):
         # date, which ends up being 365 days instead of "one year"...  this
         # might be more of a bug than the leap year issue above, but this
         # function is for development purposes only
+        # depending on which year is a leap year here, the date can be +/- 1 day
         self.assertTrue(expiration.date() in
-            (newdate.date(), newdate.date() - timedelta(days=1))
+            (newdate.date(),
+             newdate.date() - timedelta(days=1),
+             newdate.date() + timedelta(days=1)),
+            "%s not in %s" % (
+            expiration.date(), (newdate.date(), newdate.date() - timedelta(days=1)))
         )
 
     def test_cancel_if_expired(self):
