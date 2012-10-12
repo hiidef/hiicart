@@ -239,22 +239,18 @@ class HiiCartBase(models.Model):
 
     def adjust_expiration(self, newdate):
         """
-        DEVELOPMENT ONLY: Adjust subscription end date.
-
-        * Dev only because it doesn't actually change when Google or PP
-          will bill the subscription next.
+        DEVELOPMENT ONLY: Adjust subscription end date.  Won't actually change
+        when Google or PP will bill next subscription.
         """
         if self.hiicart_settings["LIVE"]:
             raise HiiCartError("Development only functionality.")
         if self.state != "PENDCANCEL" and self.state != "RECURRING":
             return
-        curr_expiration = self.get_expiration()
-        latest_pmnt = self.payments.order_by("-created")[0].created
-        delta = curr_expiration - latest_pmnt
-        newpmnt = newdate - delta
+        delta = self.get_expiring_lineitem().expiration_delta
+        new_date = newdate - delta
         for p in self.payments.all():
-            if p.created > newpmnt:
-                p.created = newpmnt
+            if p.created > new_date:
+                p.created = new_date
                 p.save()
 
     def cancel_if_expired(self, grace_period=None):
@@ -312,6 +308,9 @@ class HiiCartBase(models.Model):
     def get_expiration(self):
         """Get expiration of recurring item or None if there are no recurring items."""
         return max([r.get_expiration() for r in self.recurring_lineitems])
+
+    def get_expiring_lineitem(self):
+        return max([(r.get_expiration(), r) for r in self.recurring_lineitems])[1]
 
     def get_gateway(self):
         """Get the PaymentGateway associated with this cart or None if cart has not been submitted yet.."""
@@ -554,11 +553,7 @@ class RecurringLineItemBase(LineItemBase):
 
     def get_expiration(self):
         """Expiration/next billing date for item."""
-        delta = None
-        if self.duration_unit == "DAY":
-            delta = relativedelta(days=self.duration)
-        elif self.duration_unit == "MONTH":
-            delta = relativedelta(months=self.duration)
+        delta = self.expiration_delta
         payments = self.cart.payments.filter(
                 state="PAID", amount__gt=0).order_by("-created")
         if not payments:
@@ -569,6 +564,15 @@ class RecurringLineItemBase(LineItemBase):
         else:
             last_payment = payments[0].created
         return last_payment + delta
+
+    @property
+    def expiration_delta(self):
+        delta = None
+        if self.duration_unit == "DAY":
+            delta = relativedelta(days=self.duration)
+        elif self.duration_unit == "MONTH":
+            delta = relativedelta(months=self.duration)
+        return delta
 
     def is_expired(self, grace_period=None):
         """Get subscription expiration based on last payment optionally providing a grace period."""

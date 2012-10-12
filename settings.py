@@ -53,6 +53,7 @@ MIDDLEWARE_CLASSES = (
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
 )
 
 ROOT_URLCONF = "urls"
@@ -66,7 +67,7 @@ TEMPLATE_DIRS = (
     # Don"t forget to use absolute paths, not relative paths.
 )
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -74,7 +75,7 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     #"django.contrib.staticfiles",
     "hiicart"
-)
+]
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -109,6 +110,10 @@ LOGGING = {
             "handlers": ["default"],
             "level": "ERROR",
         },
+        "sentry": {
+            "handlers": ["default"],
+            "level": "ERROR",
+        }
     }
 }
 

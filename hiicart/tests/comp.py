@@ -72,7 +72,7 @@ class CompTestCase(base.HiiCartTestCase):
         self.test_submit_recurring()
         self.cart.adjust_expiration(datetime.now()-timedelta(days=1))
         self.assertEqual(self.cart.payments.count(), 1)
-        self.cart.charge_recurring()
+        self.cart.charge_recurring(grace_period=timedelta(hours=1))
         self.assertEqual(self.cart.payments.count(), 2)
         # With grace period 
         self.cart = cart_base.clone()

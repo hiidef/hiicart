@@ -97,20 +97,7 @@ class HiiCartTestCase(base.HiiCartTestCase):
         newdate = datetime.now() + timedelta(days=120)
         self.cart.adjust_expiration(newdate)
         expiration = self.cart.get_expiration()
-        # 365/leap year assumption messing this up
-        # here, we set the new expiration date, but internally it gets set
-        # by taking a timedelta offset from the earliest payment to the old
-        # date, which ends up being 365 days instead of "one year"...  this
-        # might be more of a bug than the leap year issue above, but this
-        # function is for development purposes only
-        # depending on which year is a leap year here, the date can be +/- 1 day
-        self.assertTrue(expiration.date() in
-            (newdate.date(),
-             newdate.date() - timedelta(days=1),
-             newdate.date() + timedelta(days=1)),
-            "%s not in %s" % (
-            expiration.date(), (newdate.date(), newdate.date() - timedelta(days=1)))
-        )
+        self.assertEqual(expiration.date(), newdate.date())
 
     def test_cancel_if_expired(self):
         """Test cancelling a cart when expired."""
