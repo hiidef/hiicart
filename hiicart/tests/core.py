@@ -101,6 +101,8 @@ class HiiCartTestCase(base.HiiCartTestCase):
 
     def test_cancel_if_expired(self):
         """Test cancelling a cart when expired."""
+        # make sure no grace periods in the settings mess with this
+        hsettings.SETTINGS["EXPIRATION_GRACE_PERIOD"] = timedelta(hours=1)
         cart_base = self.cart.clone()
         # RECURRING -> CANCELLED
         self._submit_recurring()
@@ -118,6 +120,8 @@ class HiiCartTestCase(base.HiiCartTestCase):
 
     def test_cancel_if_expired_grace_period(self):
         """Test cancelling a cart when expired after a grace period."""
+        # make sure no grace periods in the settings mess with this
+        hsettings.SETTINGS["EXPIRATION_GRACE_PERIOD"] = timedelta(hours=1)
         cart_base = self.cart.clone()
         # RECURRING -> CANCELLED
         self._submit_recurring()
