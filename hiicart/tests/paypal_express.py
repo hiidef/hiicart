@@ -45,7 +45,7 @@ class PaypalExpressCheckoutTestCase(base.HiiCartTestCase):
             'PAYMENTREQUEST_0_SHIPTOSTATE': 'AK',
             'PAYMENTREQUEST_0_SHIPTOZIP': '90210',
             'PAYMENTREQUEST_0_SHIPTOCOUNTRYCODE': 'US'
-            }
+        }
 
         self.cart.hiicart_settings.update(STORE_SETTINGS)
         gateway = PaypalExpressCheckoutGateway(self.cart)
