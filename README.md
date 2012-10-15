@@ -69,6 +69,19 @@ LOGGING = {
 HiiCart will aggressively log events and IPN requests to this log in at the INFO
 level and errors at the ERROR level.
 
+Testing
+-------
+
+HiiCart is testable via Django's test runner.  To run the tests, simply run
+
+```
+python manage.py test hiicart
+```
+
+Some tests might not run without valid gateway configuration, which you can
+add to a `local_settings.py` file if running the tests from a hiicart checkout
+or to your regular settings if running from your django project.
+
 Example App
 -----------
 
