@@ -41,7 +41,7 @@ def format_exceptions(method):
 def format_data(data):
     """Return data (request.GET or request.POST) as a formatted string for
     use in logging or recording exceptional request/responses."""
-    format = lambda x: pformat(x, indent=4)
+    format = lambda x: repr(x)
     try:
         if isinstance(data, QueryDict):
             if hasattr(data, "dict"):
