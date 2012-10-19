@@ -31,19 +31,33 @@ SUBSCRIPTION_UNITS = [
     ("MONTH", "Months"),
 ]
 
-# TODO: some more documentation on what these states mean
-
 HIICART_STATES = [
+    # the cart has been created, but not yet submitted to the gateway
     ("OPEN", "Open"),
+    # the cart has been submitted to the gateway.  since the inclusion
+    # of the "PENDING" state, this state means that the user has been
+    # sent to the gateway, but the gateway has not notified us that the
+    # user has completed their part of the payment process yet
     ("SUBMITTED", "Submitted"),
+    # the gateway has notified us that some kind of transaction on this
+    # cart has been started and the final payment on it is pending (ie.
+    # the user has actually submitted payment details, but the payment has
+    # not yet completed, for echecks, credit delays, etc)
+    ("PENDING", "Pending"),
+    # FIXME: document ABANDONED cart state
     ("ABANDONED", "Abandoned"),
+    # payment has been made and the gateway has notified us via the IPN
+    # (or via polling for some gateways, ex. braintree).
     ("COMPLETED", "Completed"),
     # active subscription
     ("RECURRING", "Recurring"),
     # subscription cancelled at gateway but not expired yet
     ("PENDCANCEL", "Pending Cancellation"),
+    # FIXME: document REFUND cart state
     ("REFUND", "Refunded"),
+    # FIXME: document PARTREFUND cart state
     ("PARTREFUND", "Partially Refunded"),
+    # FIXME: document CANCELLED cart state
     ("CANCELLED", "Cancelled"),
 ]
 
@@ -59,8 +73,10 @@ PAYMENT_STATES = [
 # then the only valid new state is one in the value of that key
 
 VALID_TRANSITIONS = {
-    "OPEN": ["SUBMITTED", "ABANDONED", "COMPLETED", "RECURRING", "PENDCANCEL", "CANCELLED"],
-    "SUBMITTED": ["COMPLETED", "RECURRING", "PENDCANCEL", "CANCELLED"],
+    # PENDING is here because it seems like the submission step is skippable somehow, but
+    # generally we only expect to get to PENDING from SUBMITTED
+    "OPEN": ["SUBMITTED", "ABANDONED", "COMPLETED", "RECURRING", "PENDING", "PENDCANCEL", "CANCELLED"],
+    "SUBMITTED": ["COMPLETED", "PENDING", "RECURRING", "PENDCANCEL", "CANCELLED"],
     "ABANDONED": [],
     "COMPLETED": ["RECURRING", "PENDCANCEL", "CANCELLED", "REFUND", "PARTREFUND"],
     "PARTREFUND": ["REFUND","CANCELLED"],
@@ -594,6 +610,10 @@ class RecurringLineItem(RecurringLineItemBase):
 
 
 class PaymentMetaclass(models.base.ModelBase):
+    # TODO: this `payment_state_changed` signal absolutely does not need to be
+    # tacked onto the payment base classes as a weird meta attribute;  we should
+    # define all signals sent by hiicart in a hiicart.signals module with
+    # appropriate documentation
     def __new__(cls, name, bases, attrs):
         try:
             parents = [b for b in bases if issubclass(b, PaymentBase)]
