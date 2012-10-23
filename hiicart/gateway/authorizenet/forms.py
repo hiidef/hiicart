@@ -69,7 +69,8 @@ class PaymentForm(forms.Form):
                 if self.is_bound:
                     self.data[key] = data[key]
                 else:
-                    self.fields[key].initial = data[key]
+                    if key in self.fields:
+                        self.fields[key].initial = data[key]
 
     def set_result(self, result):
         """
