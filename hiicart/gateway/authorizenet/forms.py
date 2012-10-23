@@ -32,6 +32,7 @@ class PaymentForm(forms.Form):
     """
     return_url = forms.CharField()
     cart_id = forms.CharField()
+    x_invoice_num = forms.CharField()
     x_amount = forms.CharField()
     x_fp_sequence = forms.CharField()
     x_fp_timestamp = forms.CharField()
@@ -39,17 +40,36 @@ class PaymentForm(forms.Form):
     x_relay_response = forms.CharField()
     x_relay_url = forms.CharField()
     x_login = forms.CharField()
+    x_method = forms.CharField()
     x_type = forms.CharField()
     x_test_request = forms.CharField()
     x_version = forms.CharField()
     x_card_num = forms.CharField(max_length=16)
+    x_card_code = forms.CharField(min_length=3, max_length=4)
     x_exp_date = forms.CharField(max_length=7) # MM/YY, MMYY, MM-YY, MM-YYYY
+    x_first_name = forms.CharField(max_length=255)
+    x_last_name = forms.CharField(max_length=255)
+    x_address = forms.CharField(max_length=80)
+    x_city = forms.CharField(max_length=50)
+    x_state = forms.CharField(max_length=50)
+    x_zip = forms.CharField(max_length=30)
+    x_country = forms.CharField(max_length=2)
+    x_phone = forms.CharField(max_length=30)
+    x_ship_to_first_name = forms.CharField(max_length=255)
+    x_ship_to_last_name = forms.CharField(max_length=255)
+    x_ship_to_address = forms.CharField(max_length=80)
+    x_ship_to_city = forms.CharField(max_length=50)
+    x_ship_to_state = forms.CharField(max_length=50)
+    x_ship_to_zip = forms.CharField(max_length=30)
+    x_ship_to_country = forms.CharField(max_length=2)
     x_delim_data = forms.CharField(max_length=100)
     x_delim_char = forms.CharField(max_length=100)
     x_encap_char = forms.CharField(max_length=100)
+    x_recurring_billing = forms.CharField(max_length=100)
+    x_description = forms.CharField(max_length=100)
+    x_customer_ip = forms.CharField(max_length=100)
+    x_company = forms.CharField(max_length=100)
     x_tran_key = forms.CharField(max_length=100)
-    x_trans_id = forms.CharField(max_length=100)
-    empty_field = forms.CharField(max_length=100)
 
 
     def __init__(self, *args, **kwargs):
@@ -61,9 +81,7 @@ class PaymentForm(forms.Form):
         try:
             return self[key]
         except KeyError:
-            if hasattr(self, key):
-                return object.__getattribute__(self, key)
-            return self['empty_field']
+            return object.__getattribute__(self, key)
 
     def set_transaction(self, data):
         self._submit_url = data['submit_url']
@@ -72,8 +90,7 @@ class PaymentForm(forms.Form):
                 if self.is_bound:
                     self.data[key] = data[key]
                 else:
-                    if key in self.fields:
-                        self.fields[key].initial = data[key]
+                    self.fields[key].initial = data[key]
 
     def set_result(self, result):
         """
@@ -105,6 +122,7 @@ class PaymentForm(forms.Form):
         """
         return [self['return_url'],
                 self['cart_id'],
+                self['x_invoice_num'],
                 self['x_amount'],
                 self['x_fp_hash'],
                 self['x_fp_sequence'],
@@ -113,10 +131,15 @@ class PaymentForm(forms.Form):
                 self['x_login'],
                 self['x_version'],
                 self['x_fp_timestamp'],
+                self['x_method'],
                 self['x_type'],
                 self['x_delim_data'],
                 self['x_delim_char'],
                 self['x_encap_char'],
+                self['x_recurring_billing'],
+                self['x_description'],
+                self['x_customer_ip'],
+                self['x_company'],
                 self['x_tran_key'],
                 self['x_trans_id'],
                 self['x_test_request']]
