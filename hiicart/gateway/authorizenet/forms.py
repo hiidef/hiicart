@@ -60,7 +60,9 @@ class PaymentForm(forms.Form):
         try:
             return self[key]
         except KeyError:
-            return object.__getattribute__(self, key)
+            if hasattr(self, key):
+                return object.__getattribute__(self, key)
+            return None
 
     def set_transaction(self, data):
         self._submit_url = data['submit_url']
