@@ -70,6 +70,12 @@ class PaymentForm(forms.Form):
     x_customer_ip = forms.CharField(max_length=100)
     x_company = forms.CharField(max_length=100)
     x_tran_key = forms.CharField(max_length=100)
+    x_bank_name = forms.CharField(max_length=100)
+    x_bank_acct_name = forms.CharField(max_length=100)
+    x_bank_aba_code = forms.CharField(max_length=100)
+    x_bank_acct_type = forms.CharField(max_length=100)
+    x_bank_acct_num = forms.CharField(max_length=100)
+    x_echeck_type = forms.CharField(max_length=100)
 
 
     def __init__(self, *args, **kwargs):
