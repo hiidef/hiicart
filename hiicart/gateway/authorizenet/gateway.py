@@ -70,9 +70,8 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                 'x_tran_key': self.settings['MERCHANT_KEY'],
                 'x_relay_url': self.settings['IPN_URL'],
                 'x_relay_response': 'FALSE',
-                'x_method': 'CC',
-                'x_type': 'PRIOR_AUTH_CAPTURE',
-                'x_trans_id': '2178546339',
+                'x_method': 'ECHECK',
+                'x_type': 'AUTH_CAPTURE',
                 'x_test_request': 'FALSE',
                 'x_delim_data': 'TRUE',
                 'x_delim_char': ',',
@@ -81,6 +80,12 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                 'x_description': timestamp,
                 'x_customer_ip': '75.73.44.208',
                 'x_company': 'Acme Inc',
+                'x_bank_name': 'Wells Fargo',
+                'x_bank_acct_name': 'Hans Kuder',
+                'x_bank_aba_code': '091000019',
+                'x_bank_acct_type': 'CHECKING',
+                'x_bank_acct_num': '0123456789',
+                'x_echeck_type': 'WEB',
                 'x_version': '3.1'}
         if request.META.get('HTTP_X_FORWARDED_PROTO') == 'https':
             data['return_url'] = data['return_url'].replace('http:', 'https:')

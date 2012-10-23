@@ -70,7 +70,6 @@ class PaymentForm(forms.Form):
     x_customer_ip = forms.CharField(max_length=100)
     x_company = forms.CharField(max_length=100)
     x_tran_key = forms.CharField(max_length=100)
-    x_trans_id = forms.CharField(max_length=100)
 
 
     def __init__(self, *args, **kwargs):
@@ -142,7 +141,13 @@ class PaymentForm(forms.Form):
                 self['x_customer_ip'],
                 self['x_company'],
                 self['x_tran_key'],
-                self['x_trans_id'],
+
+                self['x_bank_name'],
+                self['x_bank_acct_name'],
+                self['x_bank_aba_code'],
+                self['x_bank_acct_type'],
+                self['x_bank_acct_num'],
+                self['x_echeck_type'],
                 self['x_test_request']]
 
     @property
