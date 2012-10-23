@@ -49,6 +49,7 @@ class PaymentForm(forms.Form):
     x_encap_char = forms.CharField(max_length=100)
     x_tran_key = forms.CharField(max_length=100)
     x_trans_id = forms.CharField(max_length=100)
+    empty_field = forms.CharField(max_length=100)
 
 
     def __init__(self, *args, **kwargs):
@@ -62,7 +63,7 @@ class PaymentForm(forms.Form):
         except KeyError:
             if hasattr(self, key):
                 return object.__getattribute__(self, key)
-            return None
+            return self['empty_field']
 
     def set_transaction(self, data):
         self._submit_url = data['submit_url']
