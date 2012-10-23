@@ -70,7 +70,7 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                 'x_relay_url': self.settings['IPN_URL'],
                 'x_relay_response': 'FALSE',
                 'x_type': 'PRIOR_AUTH_CAPTURE',
-                'x_trans_id': '2178546339'
+                'x_trans_id': '2178546339',
                 'x_test_request': 'FALSE',
                 'x_delim_data': 'TRUE',
                 'x_delim_char': ',',
