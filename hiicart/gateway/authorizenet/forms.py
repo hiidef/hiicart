@@ -70,6 +70,7 @@ class PaymentForm(forms.Form):
     x_customer_ip = forms.CharField(max_length=100)
     x_company = forms.CharField(max_length=100)
     x_tran_key = forms.CharField(max_length=100)
+    x_trans_id = forms.CharField(max_length=100)
 
 
     def __init__(self, *args, **kwargs):
