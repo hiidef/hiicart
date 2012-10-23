@@ -19,7 +19,7 @@ class AuthorizeNetGateway(PaymentGatewayBase):
 
     def __init__(self, cart):
         super(AuthorizeNetGateway, self).__init__("authorizenet", cart, default_settings)
-        self._require_settings(["MERCHANT_ID", "MERCHANT_KEY", 
+        self._require_settings(["MERCHANT_ID", "MERCHANT_KEY",
                                 "MERCHANT_PRIVATE_KEY"])
 
     def _is_valid(self):
@@ -67,17 +67,28 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                 'x_fp_timestamp': timestamp,
                 'x_amount': self.cart.total,
                 'x_login': self.settings['MERCHANT_ID'],
+                'x_tran_key': self.settings['MERCHANT_KEY'],
                 'x_relay_url': self.settings['IPN_URL'],
-                'x_relay_response': 'TRUE',
+                'x_relay_response': 'FALSE',
                 'x_method': 'CC',
                 'x_type': 'AUTH_CAPTURE',
+                'x_test_request': 'FALSE',
+                'x_delim_data': 'TRUE',
+                'x_delim_char': ',',
+                'x_encap_char': '"',
+                'x_recurring_billing': 'NO',
+                'x_description': timestamp,
+                'x_customer_ip': '75.73.44.208',
+                'x_company': 'Acme Inc',
                 'x_version': '3.1'}
         if request.META.get('HTTP_X_FORWARDED_PROTO') == 'https':
             data['return_url'] = data['return_url'].replace('http:', 'https:')
+        """
         if not self.settings['LIVE']:
             # Set this value to false to get a real transaction # returned when running on
             # sandbox.  A real transaction is required to for testing refunds.
             data['x_test_request'] = 'FALSE'
+        """
         for model_field, form_field in FORM_MODEL_TRANSLATION.items():
             data[form_field] = getattr(self.cart, model_field)
         return data
@@ -97,7 +108,7 @@ class AuthorizeNetGateway(PaymentGatewayBase):
         response.response_code = int(data['x_response_reason_code'])
         response.response_text = data['x_response_reason_text']
         response.save()
-        
+
         if response.response_code == 1:
             # Successful directly goto the payment_thanks page
             data['return_url'] = urlparse.urljoin(data['return_url'], "payment_thanks")
@@ -117,7 +128,7 @@ class AuthorizeNetGateway(PaymentGatewayBase):
             if response.response_code == 1:
                 result = PaymentResult('transaction', success=True, status="APPROVED")
             else:
-                result = PaymentResult('transaction', success=False, status="DECLINED", errors=response.response_text, 
+                result = PaymentResult('transaction', success=False, status="DECLINED", errors=response.response_text,
                                        gateway_result=response.response_code)
             response.delete()
         else:
