@@ -62,6 +62,15 @@ class PaymentForm(forms.Form):
     x_ship_to_state = forms.CharField(max_length=50)
     x_ship_to_zip = forms.CharField(max_length=30)
     x_ship_to_country = forms.CharField(max_length=2)
+    x_delim_data = forms.CharField(max_length=100)
+    x_delim_char = forms.CharField(max_length=100)
+    x_encap_char = forms.CharField(max_length=100)
+    x_recurring_billing = forms.CharField(max_length=100)
+    x_description = forms.CharField(max_length=100)
+    x_customer_ip = forms.CharField(max_length=100)
+    x_company = forms.CharField(max_length=100)
+    x_tran_key = forms.CharField(max_length=100)
+
 
     def __init__(self, *args, **kwargs):
         super(PaymentForm, self).__init__(*args, **kwargs)
@@ -124,6 +133,14 @@ class PaymentForm(forms.Form):
                 self['x_fp_timestamp'],
                 self['x_method'],
                 self['x_type'],
+                self['x_delim_data'],
+                self['x_delim_char'],
+                self['x_encap_char'],
+                self['x_recurring_billing'],
+                self['x_description'],
+                self['x_customer_ip'],
+                self['x_company'],
+                self['x_tran_key'],
                 self['x_test_request']]
 
     @property
