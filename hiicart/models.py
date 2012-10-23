@@ -418,6 +418,9 @@ class HiiCartBase(models.Model):
             newstate = "PARTREFUND"
         elif total_refund > 0 and total_refund >= total_paid:
             newstate = "REFUND"
+        # If all of the payments in the cart are PENDING, the cart should be PENDING
+        if len(payments) and all([True if payment.state == "PENDING" else False for payment in payments]):
+            newstate = "PENDING"
         # Account for recurring state changes
         if any([li.is_active for li in self.recurring_lineitems]):
             newstate = "RECURRING"

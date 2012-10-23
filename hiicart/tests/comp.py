@@ -23,6 +23,17 @@ class CompTestCase(base.HiiCartTestCase):
         self.assertEqual(result, None)
         self.assertEqual(self.cart.state, "COMPLETED")
 
+    def test_pending_state(self):
+        """Test that a cart which should go into PENDING state does."""
+        self.assertEqual(self.cart.state, "OPEN")
+        self.assertEqual(self.cart.payments.count(), 0)
+        pmt = self.cart.payment_class(amount=self.cart.total, gateway="COMP",
+                cart=self.cart, state="PENDING", transaction_id="123401983143")
+        pmt.save()
+        self.assertEqual(self.cart.payments.count(), 1)
+        self.cart.update_state()
+        self.assertEqual(self.cart.state, "PENDING")
+
     def test_submit_recurring(self):
         """Test submitting to COMP payment gateway."""
         settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
