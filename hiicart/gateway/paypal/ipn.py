@@ -132,7 +132,7 @@ class PaypalIPN(IPNBase):
         # or some unknown state we should log before the payments are updated
         else:
             states = [p.state for p in existing_payments]
-            self.log.warn("Payment Pending notification received on transaction %s, but payments (%s) already exist." % (tx, states)
+            self.log.warn("Payment Pending notification received on transaction %s, but payments (%s) already exist." % (tx, states))
 
     def payment_refunded(self, data):
         """Accept a refund notification. mc_gross will be negative."""
