@@ -70,6 +70,12 @@ def _base_paypal_ipn_listener(request, ipn_class):
         handler.accept_payment(data)
     elif status == "Refunded":
         handler.payment_refunded(data)
+    elif status == "Pending":
+        if hasattr(handler, "payment_pending"):
+            handler.payment_pending(data)
+        else:
+            logger.info("Unknown IPN type or status. Type: %s\tStatus: %s\nHandler: %r" %
+                 (txn_type, status, handler))
     else:
         logger.info("Unknown IPN type or status. Type: %s\tStatus: %s" %
                  (txn_type, status))
