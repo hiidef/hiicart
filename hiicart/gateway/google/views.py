@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Google views."""
+
 import logging
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
@@ -5,10 +10,10 @@ from django.views.decorators.csrf import csrf_view_exempt
 from hiicart.gateway.base import GatewayError
 from hiicart.gateway.google.gateway import GoogleGateway
 from hiicart.gateway.google.ipn import GoogleIPN
-from hiicart.utils import format_exceptions, call_func, cart_by_uuid
+from hiicart.utils import format_exceptions, call_func, cart_by_uuid, format_data
 
 
-log = logging.getLogger("hiicart.gateway.google")
+logger = logging.getLogger("hiicart.gateway.google")
 
 
 def _find_cart(data):
@@ -27,7 +32,7 @@ def _find_cart(data):
         if len(items) > 0:
             private_data = data[items[0]]
     if not private_data:
-        log.error("Could not find private data. Data: %s" % str(data.items()))
+        logger.error("Could not find private data in:\n%s" % format_data(data))
         return None # Not a HiiCart purchase ?
     return cart_by_uuid(private_data)
 
@@ -38,10 +43,10 @@ def _find_cart(data):
 def ipn(request):
     """View to receive notifications from Google"""
     if request.method != "POST":
-        log.error('google ipn request not POSTed')
+        logger.error("IPN Request not POSTed")
         return HttpResponseBadRequest("Requests must be POSTed")
     data = request.POST
-    log.info("IPN Notification received from Google Checkout: %s" % data)
+    logger.info("IPN Received:\n%s" % format_data(data))
     cart = _find_cart(data)
     if cart:
         gateway = GoogleGateway(cart)
@@ -76,11 +81,11 @@ def ipn(request):
         elif type == "cancelled-subscription-notification":
             handler.cancelled_subscription(data)
         else:
-            log.error("google gateway: Unknown message type recieved: %s" % type)
+            logger.error("google gateway: Unknown message type recieved: %s" % type)
     else:
-        log.error('google gateway: Unknown tranaction, %s' % data)
+        logger.error('google gateway: Unknown tranaction, %s' % data)
     # Return ack so google knows we handled the message
     ack = "<notification-acknowledgment xmlns='http://checkout.google.com/schema/2' serial-number='%s'/>" % data["serial-number"].strip()
     response = HttpResponse(content=ack, content_type="text/xml; charset=UTF-8")
-    log.debug("Google Checkout: Sending IPN Acknowledgement")
+    logger.debug("Google Checkout: Sending IPN Acknowledgement")
     return response

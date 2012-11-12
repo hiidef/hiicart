@@ -1,11 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Hiicart Utils"""
+
 import logging
 import traceback
-from django.http import HttpResponse
+from pprint import pformat
+from django.http import HttpResponse, QueryDict
 from hiicart.models import CART_TYPES
 
-
-log = logging.getLogger("hiicart")
-
+logger = logging.getLogger("hiicart")
 
 def call_func(name, *args, **kwargs):
     """Call a function when all you have is the [str] name and arguments."""
@@ -27,11 +31,25 @@ def format_exceptions(method):
             return method(*args, **kwargs)
         except:
             fmt = traceback.format_exc()
-            log.error("Exception encountered: %s" % fmt)
+            logger.error("Exception encountered: %s" % fmt)
             response = HttpResponse(fmt)
             response.status_code=500  # Definitely _not_ a 200 resposne
             return response
     return wrapper
+
+
+def format_data(data):
+    """Return data (request.GET or request.POST) as a formatted string for
+    use in logging or recording exceptional request/responses."""
+    format = lambda x: repr(x)
+    try:
+        if isinstance(data, QueryDict):
+            if hasattr(data, "dict"):
+                return format(data.dict())
+            return format(dict(data.items()))
+        return format(data)
+    except:
+        return str(data)
 
 
 def cart_by_id(id):
@@ -41,12 +59,14 @@ def cart_by_id(id):
         except Cart.DoesNotExist:
             pass
 
+
 def cart_by_uuid(uuid):
     for Cart in CART_TYPES:
         try:
             return Cart.objects.get(_cart_uuid=uuid)
         except Cart.DoesNotExist:
             pass
+
 
 def cart_by_email(email):
     for Cart in CART_TYPES:

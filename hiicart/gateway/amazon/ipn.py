@@ -1,9 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Amazon IPN implementation."""
+
 import xml.etree.cElementTree as ET
 from decimal import Decimal
+import logging
 from hiicart.gateway.amazon import fps
 from hiicart.gateway.amazon.settings import SETTINGS as default_settings
 from hiicart.gateway.base import IPNBase
 
+logger = logging.getLogger("hiicart.gateway.amazon.ipn")
 
 _FPS_NS = "{http://fps.amazonaws.com/doc/2008-09-17/}"
 
@@ -45,7 +52,7 @@ class AmazonIPN(IPNBase):
             self.begin_recurring()
         elif data["transactionStatus"] == "CANCELLED":
             message = "Purchase %i (txn:%s) was cancelled with message '%s'" % (
-                      self.cart.id, data['transactionId'], data['statusMessage'])
+                      self.cart.id, data["transactionId"], data["statusMessage"])
             self.log.warn(message)
             transaction_id = data["transactionId"]
             cancelled = self.cart.payments.filter(transaction_id=transaction_id)
@@ -56,9 +63,9 @@ class AmazonIPN(IPNBase):
             self.cart.update_state()
         elif data["transactionStatus"] == "FAILURE":
             self.log.warn("Purchase %i (txn:%s) failed with message '%s': \n%s" % (
-                self.cart.id, 
-                data.get('transactionId'), 
-                data.get('statusMessage'), 
+                self.cart.id,
+                data.get("transactionId"),
+                data.get("statusMessage"),
                 data))
             self.cart.update_state()
 

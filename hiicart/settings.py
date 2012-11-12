@@ -61,10 +61,9 @@ SETTINGS = {
     'EXPIRATION_GRACE_PERIOD': None,
     'KEEP_ON_USER_DELETE': None,
     'LIVE': False,
-    'LOG': 'hiicart.log',
-    'LOG_LEVEL': logging.DEBUG,
     }
 
 # Integrate django settings
 from django.conf import settings as django_settings
 SETTINGS.update(django_settings.HIICART_SETTINGS)
+

@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+"""HiiCart Data Models."""
+
 import copy
 import django
 import logging
@@ -13,65 +17,76 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.safestring import mark_safe
 from hiicart.settings import SETTINGS as hiicart_settings
-from logging.handlers import RotatingFileHandler
 
-log = logging.getLogger("hiicart.models")
+logger = logging.getLogger("hiicart.models")
 
-### Set up library-wide logging
+SHIPPING_CHOICES = [
+    ("0", "No Shipping Charges"),
+    ("1", "Pay Shipping Once"),
+    ("2", "Pay Shipping Each Billing Cycle"),
+]
 
-if hiicart_settings["LOG"]:
-    level = hiicart_settings["LOG_LEVEL"]
-    logger = logging.getLogger("hiicart")
-    logger.setLevel(level)
-    ch = RotatingFileHandler(
-            hiicart_settings["LOG"],
-            maxBytes=5242880,
-            backupCount=10,
-            encoding="utf-8")
-    ch.setLevel(level)
-    formatter = logging.Formatter("%(asctime)s [%(levelname)-8s] %(name)s - %(message)s")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+SUBSCRIPTION_UNITS = [
+    ("DAY", "Days"),
+    ("MONTH", "Months"),
+]
 
-### Lists for field choices
+HIICART_STATES = [
+    # the cart has been created, but not yet submitted to the gateway
+    ("OPEN", "Open"),
+    # the cart has been submitted to the gateway.  since the inclusion
+    # of the "PENDING" state, this state means that the user has been
+    # sent to the gateway, but the gateway has not notified us that the
+    # user has completed their part of the payment process yet
+    ("SUBMITTED", "Submitted"),
+    # the gateway has notified us that some kind of transaction on this
+    # cart has been started and the final payment on it is pending (ie.
+    # the user has actually submitted payment details, but the payment has
+    # not yet completed, for echecks, credit delays, etc)
+    ("PENDING", "Pending"),
+    # FIXME: document ABANDONED cart state
+    ("ABANDONED", "Abandoned"),
+    # payment has been made and the gateway has notified us via the IPN
+    # (or via polling for some gateways, ex. braintree).
+    ("COMPLETED", "Completed"),
+    # active subscription
+    ("RECURRING", "Recurring"),
+    # subscription cancelled at gateway but not expired yet
+    ("PENDCANCEL", "Pending Cancellation"),
+    # FIXME: document REFUND cart state
+    ("REFUND", "Refunded"),
+    # FIXME: document PARTREFUND cart state
+    ("PARTREFUND", "Partially Refunded"),
+    # FIXME: document CANCELLED cart state
+    ("CANCELLED", "Cancelled"),
+]
 
-SHIPPING_CHOICES = (("0", "No Shipping Charges"),
-                    ("1", "Pay Shipping Once"),
-                    ("2", "Pay Shipping Each Billing Cycle"))
+PAYMENT_STATES = [
+    ("PENDING", "Pending"),
+    ("PAID", "Paid"),
+    ("FAILED", "Failed"),
+    ("REFUND", "Refund"),
+    ("CANCELLED", "Cancelled"),
+]
 
-SUBSCRIPTION_UNITS = (("DAY", "Days"),
-                      ("MONTH", "Months"))
+# valid state transitions for a cart;  if the current state is a key in this dict,
+# then the only valid new state is one in the value of that key
 
-HIICART_STATES = (("OPEN", "Open"),
-                  ("SUBMITTED", "Submitted"),
-                  ("ABANDONED", "Abandoned"),
-                  ("COMPLETED", "Completed"),
-                  ("RECURRING", "Recurring"),  # Subscription active
-                  ("PENDCANCEL", "Pending Cancellation"),  # Subscription cancelled, but not expired yet
-                  ("REFUND", "Refunded"),
-                  ("PARTREFUND", "Partially Refunded"),
-                  ("CANCELLED", "Cancelled"))
+VALID_TRANSITIONS = {
+    # PENDING is here because it seems like the submission step is skippable somehow, but
+    # generally we only expect to get to PENDING from SUBMITTED
+    "OPEN": ["SUBMITTED", "ABANDONED", "COMPLETED", "RECURRING", "PENDING", "PENDCANCEL", "CANCELLED"],
+    "SUBMITTED": ["COMPLETED", "PENDING", "RECURRING", "PENDCANCEL", "CANCELLED"],
+    "ABANDONED": [],
+    "COMPLETED": ["RECURRING", "PENDCANCEL", "CANCELLED", "REFUND", "PARTREFUND"],
+    "PARTREFUND": ["REFUND","CANCELLED"],
+    "REFUND": ["CANCELLED"],
+    "RECURRING": ["PENDCANCEL", "CANCELLED"],
+    "PENDCANCEL": ["CANCELLED"],
+    "CANCELLED": [],
+}
 
-PAYMENT_STATES = (("PENDING", "Pending"),
-                  ("PAID", "Paid"),
-                  ("FAILED", "Failed"),
-                  ("REFUND", "Refund"),
-                  ("CANCELLED", "Cancelled"))
-
-# What state transitions are valid for a cart
-VALID_TRANSITIONS = {"OPEN": ["SUBMITTED", "ABANDONED", "COMPLETED",
-                              "RECURRING", "PENDCANCEL", "CANCELLED"],
-                     "SUBMITTED": ["COMPLETED", "RECURRING",
-                                   "PENDCANCEL", "CANCELLED"],
-                     "ABANDONED": [],
-                     "COMPLETED": ["RECURRING", "PENDCANCEL", "CANCELLED", "REFUND", "PARTREFUND"],
-                     "PARTREFUND": ["REFUND","CANCELLED"],
-                     "REFUND" : ["CANCELLED"],
-                     "RECURRING": ["PENDCANCEL", "CANCELLED"],
-                     "PENDCANCEL": ["CANCELLED"],
-                     "CANCELLED": []}
-
-# For automatic tracking of all cart types, see HiiCartMetaclass
+# storage for cart classes (classes whose meta is HiiCartMetaClass)
 CART_TYPES = []
 
 
@@ -87,8 +102,9 @@ class HiiCartMetaclass(models.base.ModelBase):
             attrs['recurring_lineitem_types'] = set()
             attrs['one_time_lineitem_types'] = set()
 
-            attrs['cart_state_changed'] = Signal(providing_args=["cart", "new_state",
-                                                                 "old_state"])
+            attrs['cart_state_changed'] = Signal(
+                providing_args=["cart", "new_state", "old_state"]
+            )
         except NameError:
             # This is HiiCartBase
             parents = False
@@ -239,22 +255,18 @@ class HiiCartBase(models.Model):
 
     def adjust_expiration(self, newdate):
         """
-        DEVELOPMENT ONLY: Adjust subscription end date.
-
-        * Dev only because it doesn't actually change when Google or PP
-          will bill the subscription next.
+        DEVELOPMENT ONLY: Adjust subscription end date.  Won't actually change
+        when Google or PP will bill next subscription.
         """
         if self.hiicart_settings["LIVE"]:
             raise HiiCartError("Development only functionality.")
         if self.state != "PENDCANCEL" and self.state != "RECURRING":
             return
-        curr_expiration = self.get_expiration()
-        latest_pmnt = self.payments.order_by("-created")[0].created
-        delta = curr_expiration - latest_pmnt
-        newpmnt = newdate - delta
+        delta = self.get_expiring_lineitem().expiration_delta
+        new_date = newdate - delta
         for p in self.payments.all():
-            if p.created > newpmnt:
-                p.created = newpmnt
+            if p.created > new_date:
+                p.created = new_date
                 p.save()
 
     def cancel_if_expired(self, grace_period=None):
@@ -312,6 +324,9 @@ class HiiCartBase(models.Model):
     def get_expiration(self):
         """Get expiration of recurring item or None if there are no recurring items."""
         return max([r.get_expiration() for r in self.recurring_lineitems])
+
+    def get_expiring_lineitem(self):
+        return max([(r.get_expiration(), r) for r in self.recurring_lineitems])[1]
 
     def get_gateway(self):
         """Get the PaymentGateway associated with this cart or None if cart has not been submitted yet.."""
@@ -403,6 +418,9 @@ class HiiCartBase(models.Model):
             newstate = "PARTREFUND"
         elif total_refund > 0 and total_refund >= total_paid:
             newstate = "REFUND"
+        # If all of the payments in the cart are PENDING, the cart should be PENDING
+        if len(payments) and all([True if payment.state == "PENDING" else False for payment in payments]):
+            newstate = "PENDING"
         # Account for recurring state changes
         if any([li.is_active for li in self.recurring_lineitems]):
             newstate = "RECURRING"
@@ -554,11 +572,7 @@ class RecurringLineItemBase(LineItemBase):
 
     def get_expiration(self):
         """Expiration/next billing date for item."""
-        delta = None
-        if self.duration_unit == "DAY":
-            delta = relativedelta(days=self.duration)
-        elif self.duration_unit == "MONTH":
-            delta = relativedelta(months=self.duration)
+        delta = self.expiration_delta
         payments = self.cart.payments.filter(
                 state="PAID", amount__gt=0).order_by("-created")
         if not payments:
@@ -569,6 +583,15 @@ class RecurringLineItemBase(LineItemBase):
         else:
             last_payment = payments[0].created
         return last_payment + delta
+
+    @property
+    def expiration_delta(self):
+        delta = None
+        if self.duration_unit == "DAY":
+            delta = relativedelta(days=self.duration)
+        elif self.duration_unit == "MONTH":
+            delta = relativedelta(months=self.duration)
+        return delta
 
     def is_expired(self, grace_period=None):
         """Get subscription expiration based on last payment optionally providing a grace period."""
@@ -590,6 +613,10 @@ class RecurringLineItem(RecurringLineItemBase):
 
 
 class PaymentMetaclass(models.base.ModelBase):
+    # TODO: this `payment_state_changed` signal absolutely does not need to be
+    # tacked onto the payment base classes as a weird meta attribute;  we should
+    # define all signals sent by hiicart in a hiicart.signals module with
+    # appropriate documentation
     def __new__(cls, name, bases, attrs):
         try:
             parents = [b for b in bases if issubclass(b, PaymentBase)]
@@ -632,7 +659,7 @@ class PaymentBase(models.Model):
 
     def save(self, *args, **kwargs):
         super(PaymentBase, self).save(*args, **kwargs)
-        log.warn('Payment saved %s => %s for payment_id: %s' % (self._old_state, self.state, self.id))
+        logger.warn('Payment saved %s => %s for payment_id: %s' % (self._old_state, self.state, self.id))
         # Signal sent after save in case someone queries database
         if self.state != self._old_state:
             self.payment_state_changed.send(sender=self.__class__.__name__, payment=self,
