@@ -7,7 +7,7 @@ from hiicart.gateway.stripe.ipn import StripeIPN
 from hiicart.gateway.stripe.forms import PaymentForm, FORM_MODEL_TRANSLATION
 from hiicart.gateway.stripe.settings import SETTINGS as default_settings
 
-log = logging.getLogger('hiicart.gateway.braintree.gateway')
+log = logging.getLogger('hiicart.gateway.stripe.gateway')
 
 
 class StripeGateway(PaymentGatewayBase):
@@ -100,7 +100,7 @@ class StripeGateway(PaymentGatewayBase):
                 transaction_id=charge.id,
                 success=True,
                 status='success')
-            
+
         else:
             return TransactionResult(
                 transaction_id=None,

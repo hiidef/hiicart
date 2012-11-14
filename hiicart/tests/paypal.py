@@ -10,3 +10,9 @@ from hiicart.models import HiiCart, LineItem, RecurringLineItem
 class PaypalTestCase(base.HiiCartTestCase):
     """Paypal related tests"""
     pass
+
+class PaypalIpnTestCase(base.HiiCartTestCase):
+    """Tests of the PaypalIPN."""
+    pass
+
+
