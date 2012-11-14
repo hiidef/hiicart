@@ -1,22 +1,27 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Paypal Views"""
+
 import logging
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_view_exempt
 from hiicart.gateway.base import GatewayError
 from hiicart.gateway.paypal.ipn import PaypalIPN
-from hiicart.utils import format_exceptions, cart_by_uuid
+from hiicart.utils import format_exceptions, cart_by_uuid, format_data
 from urllib import unquote_plus
 from urlparse import parse_qs
 
 
-log = logging.getLogger("hiicart.gateway.paypal")
+logger = logging.getLogger("hiicart.gateway.paypal")
 
 
 def _find_cart(data):
     # invoice may have a suffix due to retries
     invoice = data.get('invoice') or data.get('item_number') or data.get('rp_invoice_id')
     if not invoice:
-        log.warn("No invoice # in data, aborting IPN")
+        logger.warn("No invoice # in data, aborting IPN")
         return None
     return cart_by_uuid(invoice[:36])
 
@@ -31,21 +36,19 @@ def _base_paypal_ipn_listener(request, ipn_class):
     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/456361
     """
     if request.method != "POST":
-        return HttpResponse("Requests must be POSTed")
+        logger.error("IPN Request not POSTed")
+        return HttpResponseBadRequest("Requests must be POSTed")
+
     data = request.POST.copy()
-    log.info("IPN Notification received from Paypal: %s" % data)
-    try:
-        log.info("IPN Notification received from Paypal (raw): %s" % request.raw_post_data)
-    except:
-        pass
+    logger.info("IPN Received:\n%s" % format_data(data))
     # Verify the data with Paypal
     cart = _find_cart(data)
     if not cart:
-        log.error("paypal gateway: Unknown transaction: %s" % data)
+        logger.error("paypal gateway: Unknown transaction: %s" % data)
         return HttpResponse()
     handler = ipn_class(cart)
     if not handler.confirm_ipn_data(request.raw_post_data):
-        log.error("Paypal IPN Confirmation Failed.")
+        logger.error("Paypal IPN Confirmation Failed.")
         raise GatewayError("Paypal IPN Confirmation Failed.")
     # Paypal defaults to cp1252, because it hates you
     # So, if we end up with the unicode char that means
@@ -67,8 +70,14 @@ def _base_paypal_ipn_listener(request, ipn_class):
         handler.accept_payment(data)
     elif status == "Refunded":
         handler.payment_refunded(data)
+    elif status == "Pending":
+        if hasattr(handler, "payment_pending"):
+            handler.payment_pending(data)
+        else:
+            logger.info("Unknown IPN type or status. Type: %s\tStatus: %s\nHandler: %r" %
+                 (txn_type, status, handler))
     else:
-        log.info("Unknown IPN type or status. Type: %s\tStatus: %s" %
+        logger.info("Unknown IPN type or status. Type: %s\tStatus: %s" %
                  (txn_type, status))
     return HttpResponse()
 

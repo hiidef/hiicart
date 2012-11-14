@@ -41,7 +41,7 @@ class FakeTraceback(object):
 def log_with_stacktrace(message, level=logging.INFO, logger='hiicart.audit'):
     client = get_client()
     if client is None:
-        logger = logging.get_logger()
+        logger = logging.getLogger()
         logger.warn("Could not save stack trace for message: %s" % message)
         return
     kwargs = dict(level=level, logger=logger)
