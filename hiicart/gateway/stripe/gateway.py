@@ -79,7 +79,7 @@ class StripeGateway(PaymentGatewayBase):
                 charge = stripe_api.Charge.create(
                     api_key=self.settings['PRIVATE_KEY'],
                     amount=int(self.cart.total * 100), # amount in cents
-                    currency="usd",
+                    currency=self.settings['CURRENCY_CODE'],
                     card=token,
                     description="Order #%s (%s)" % (self.cart.id, self.cart.bill_email)
                 )
