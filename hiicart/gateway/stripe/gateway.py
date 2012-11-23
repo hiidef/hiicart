@@ -7,7 +7,7 @@ from hiicart.gateway.stripe.ipn import StripeIPN
 from hiicart.gateway.stripe.forms import PaymentForm, FORM_MODEL_TRANSLATION
 from hiicart.gateway.stripe.settings import SETTINGS as default_settings
 
-log = logging.getLogger('hiicart.gateway.braintree.gateway')
+log = logging.getLogger('hiicart.gateway.stripe.gateway')
 
 
 class StripeGateway(PaymentGatewayBase):
@@ -79,7 +79,7 @@ class StripeGateway(PaymentGatewayBase):
                 charge = stripe_api.Charge.create(
                     api_key=self.settings['PRIVATE_KEY'],
                     amount=int(self.cart.total * 100), # amount in cents
-                    currency="usd",
+                    currency=self.settings['CURRENCY_CODE'],
                     card=token,
                     description="Order #%s (%s)" % (self.cart.id, self.cart.bill_email)
                 )
@@ -100,7 +100,7 @@ class StripeGateway(PaymentGatewayBase):
                 transaction_id=charge.id,
                 success=True,
                 status='success')
-            
+
         else:
             return TransactionResult(
                 transaction_id=None,
