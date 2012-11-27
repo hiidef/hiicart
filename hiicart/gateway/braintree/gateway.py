@@ -211,8 +211,12 @@ class BraintreeGateway(PaymentGatewayBase):
             return None
         subscription_id = self.cart.recurring_lineitems[0].payment_token
         result = braintree.Subscription.cancel(subscription_id)
+        if result.subscription:
+            status = result.subscription.status
+        else:
+            status='Canceled'
         return SubscriptionResult(transaction_id=subscription_id,
-                                  success=result.is_success, status=result.subscription.status,
+                                  success=result.is_success, status=status,
                                   gateway_result=result)
 
     def charge_recurring(self, grace_period=None):
