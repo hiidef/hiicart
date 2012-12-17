@@ -31,6 +31,9 @@ def update_billing_info(cart, data):
     cart.ship_postal_code = cart.ship_postal_code or cart.bill_postal_code
     cart.bill_country = cart.bill_country or data.get("address_country_code", "")
     cart.ship_country = cart.ship_country or cart.bill_country
+    if data.get("address_name"):
+        cart.ship_first_name = data.get("address_name")
+        cart.ship_last_name = ""
 
 class PaypalIPN(IPNBase):
     """Paypal IPN Handler"""
