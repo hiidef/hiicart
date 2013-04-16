@@ -5,9 +5,9 @@ from hiicart.gateway.base import IPNBase, TransactionResult, SubscriptionResult
 from hiicart.gateway.braintree.settings import SETTINGS as default_settings
 from hiicart.models import CART_TYPES
 
-BRAINTREE_STATUS = {"PAID": ["settled"],
-                    "PENDING": ["authorized", "authorizing",
-                                "submitted_for_settlement"],
+BRAINTREE_STATUS = {"PAID": ["settled", "authorized", 
+                             "submitted_for_settlement"],
+                    "PENDING": ["authorizing"],
                     "FAILED": ["failed", "gateway_rejected",
                                "processor_declined", "settlement_failed"],
                     "CANCELLED": ["voided"]}
@@ -61,6 +61,7 @@ class BraintreeIPN(IPNBase):
             payment = self._create_payment(transaction.amount,
                                            transaction.id, state)
             payment.save()
+            self.cart.update_state()
             return payment
 
     def new_order(self, transaction):
