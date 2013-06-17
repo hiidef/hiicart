@@ -303,8 +303,21 @@ class PaypalGateway(PaymentGatewayBase):
         response = self._do_nvp('GetTransactionDetails', params)
         return response
 
-    def get_recurring_payments_profile_details(self, subscription_id):
-        params = {}
-        params['profileid'] = subscription_id
-        response = self._do_nvp('GetRecurringPaymentsProfileDetails', params)
-        return response
+    def cancel_recurring(self, profileid=None):
+        """Cancel recurring items with gateway. Returns a CancelResult."""
+        if not profileid:
+            item = self.cart.recurring_lineitems[0]
+            profileid = item.payment_token
+
+        params = {
+            'profileid': profileid,
+            'action': 'cancel',
+        }
+
+        self._do_nvp('ManageRecurringPaymentsProfileStatus', params)
+        # make sure the line item is not acitive
+        item = self.cart.recurring_lineitems[0]
+        item.is_active = False
+        item.save()
+        self.cart.update_state()
+        return CancelResult(None)
