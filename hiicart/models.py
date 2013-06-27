@@ -580,7 +580,7 @@ class RecurringLineItemBase(LineItemBase):
             if self.recurring_start:
                 last_payment = self.recurring_start - delta
             else:
-                return datetime.min
+                return self.cart.created
         else:
             last_payment = payments[0].created
         return last_payment + delta
