@@ -92,7 +92,6 @@ class PaypalGateway(PaymentGatewayBase):
             if type(v) == list:
                 response_dict[k] = v[0]
         if response_dict['ACK'] != 'Success':
-            print response_dict
             raise GatewayError("Error calling Paypal %s" % method)
         return response_dict
 
