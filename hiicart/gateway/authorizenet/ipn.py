@@ -9,6 +9,7 @@ from hiicart.models import CART_TYPES
 FORM_MODEL_TRANSLATION = {"ship_first_name": "x_ship_to_first_name",
                           "ship_last_name": "x_ship_to_last_name",
                           "ship_street1": "x_ship_to_address",
+                          "ship_street2": "shipping_street_address2",
                           "ship_city": "x_ship_to_city",
                           "ship_state": "x_ship_to_state",
                           "ship_postal_code": "x_ship_to_zip",
@@ -17,6 +18,7 @@ FORM_MODEL_TRANSLATION = {"ship_first_name": "x_ship_to_first_name",
                           "bill_first_name": "x_first_name",
                           "bill_last_name": "x_last_name",
                           "bill_street1": "x_address",
+                          "bill_street2": "billing_street_address2",
                           "bill_city": "x_city",
                           "bill_state": "x_state",
                           "bill_postal_code": "x_zip",
@@ -79,8 +81,28 @@ class AuthorizeNetIPN(IPNBase):
             return
         for model_field, form_field in FORM_MODEL_TRANSLATION.items():
             if form_field in data and data[form_field]:
-                setattr(self.cart, model_field, data[form_field])
+                if form_field in ['x_address', 'x_ship_to_address']:
+                    addr1, addr2 = self.split_address(data[form_field])
+                    setattr(self.cart, model_field, addr1)
+                    if form_field == 'x_address':
+                        setattr(self.cart, 'bill_street2', addr2)
+                    else:
+                        setattr(self.cart, 'ship_street2', addr2)
+                else:
+                    setattr(self.cart, model_field, data[form_field])
         self.cart.save()
+
+    def split_address(self, addr):
+        if not addr:
+            return ('', '')
+
+        addr1 = addr2 = ''
+        if ', ' in addr:
+            addr1, addr2 = addr.split(', ', 1)
+        else:
+            addr1 = addr
+        
+        return (addr1, addr2)
 
     def accept_payment(self, data):
         """Save a new order using details from a transaction."""
