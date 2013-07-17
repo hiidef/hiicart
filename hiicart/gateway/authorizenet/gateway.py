@@ -92,11 +92,14 @@ class AuthorizeNetGateway(PaymentGatewayBase):
     def set_response(self, data):
         """Store payment result for confirm_payment."""
 
-        response = PaymentResponse()
-        response.cart = self.cart
-        response.response_code = int(data['x_response_reason_code'])
-        response.response_text = data['x_response_reason_text']
-        response.save()
+        response, created = PaymentResponse.objects.get_or_create(cart=self.cart, defaults={
+                'response_code': int(data['x_response_reason_code']),
+                'response_text': data['x_response_reason_text']
+                })
+        if not created:
+            response.response_code = int(data['x_response_reason_code'])
+            response.response_text = data['x_response_reason_text']
+            response.save()
         
         if response.response_code == 1:
             # Successful directly goto the payment_thanks page
@@ -119,7 +122,6 @@ class AuthorizeNetGateway(PaymentGatewayBase):
             else:
                 result = PaymentResult('transaction', success=False, status="DECLINED", errors=response.response_text, 
                                        gateway_result=response.response_code)
-            response.delete()
         else:
             result = PaymentResult('transaction', success=False, status=None, errors="Failed to process transaction")
         return result
