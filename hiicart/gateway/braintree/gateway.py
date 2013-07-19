@@ -215,6 +215,11 @@ class BraintreeGateway(PaymentGatewayBase):
             status = result.subscription.status
         else:
             status='Canceled'
+        # make sure the line item is not acitive
+        item = self.cart.recurring_lineitems[0]
+        item.is_active = False
+        item.save()
+        self.cart.update_state()
         return SubscriptionResult(transaction_id=subscription_id,
                                   success=result.is_success, status=status,
                                   gateway_result=result)
