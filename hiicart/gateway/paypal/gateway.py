@@ -250,14 +250,6 @@ class PaypalGateway(PaymentGatewayBase):
         # Can't validate credentials with Paypal AFAIK
         return True
 
-    def cancel_recurring(self):
-        """Cancel recurring items with gateway. Returns a CancelResult."""
-        alias = self.settings["BUSINESS"]
-        url = "%s?cmd=%s&alias=%s" % (self.submit_url,
-                                      PAYMENT_CMD["UNSUBSCRIBE"],
-                                      self.settings["BUSINESS"])
-        return CancelResult("url", url=url)
-
     def charge_recurring(self, grace_period=None):
         """This Paypal API doesn't support manually charging subscriptions."""
         pass

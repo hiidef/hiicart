@@ -427,12 +427,12 @@ class HiiCartBase(models.Model):
             newstate = "RECURRING"
         elif len(self.recurring_lineitems) > 0:
             # Paid and then cancelled, but not expired
-            if newstate == "COMPLETED" and not all([r.is_expired() for r in self.recurring_lineitems]):
+            if newstate in ("COMPLETED", "PARTREFUND", "REFUND") and not all([r.is_expired() for r in self.recurring_lineitems]):
                 newstate = "PENDCANCEL"
             # Could be cancelled manually (is_active set to False)
             # Could be a re-subscription, but is now cancelled. Is not paid.
             # Could be expired
-            elif newstate == "COMPLETED" or self.state == "RECURRING":
+            elif newstate in ("COMPLETED", "PARTREFUND", "REFUND") or self.state == "RECURRING":
                 newstate = "CANCELLED"
         # Validate transition then save
         if newstate and newstate != self.state and self._is_valid_transition(self.state, newstate):
