@@ -55,11 +55,13 @@ class BraintreeIPN(IPNBase):
         if payment:
             if payment[0].state != state:
                 payment[0].state = state
+                payment[0].created = transaction.created_at
                 payment[0].save()
                 return payment[0]
         else:
             payment = self._create_payment(transaction.amount,
                                            transaction.id, state)
+            payment.created = transaction.created_at
             payment.save()
             self.cart.update_state()
             return payment
