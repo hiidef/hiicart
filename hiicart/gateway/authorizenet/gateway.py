@@ -1,7 +1,8 @@
 import hmac
 import random
 import time
-import urlparse
+import re
+from urlparse import urlsplit, urlunsplit, parse_qs, urljoin
 
 from django.contrib.sessions.backends.db import SessionStore
 from hiicart.models import PaymentResponse
@@ -103,7 +104,20 @@ class AuthorizeNetGateway(PaymentGatewayBase):
         
         if response.response_code == 1:
             # Successful directly goto the payment_thanks page
-            data['return_url'] = urlparse.urljoin(data['return_url'], "payment_thanks")
+            (scheme, host, path, paramstr, fragment) = list(urlsplit(data['return_url']))
+            params = parse_qs(paramstr)
+
+            if 'cd' in params:
+                host = params['cd'][0]
+                scheme = 'http'
+
+            match = re.search(r'^(.*/checkout)(/[\w\-]+)$', path)
+            if match:
+                path = match.group(1)
+
+            return_url = urlunsplit((scheme, host, path, paramstr, fragment))
+
+            data['return_url'] = urljoin(return_url, "payment_thanks")
         else:
             # Mimic the braintree redirect behavior of appending http_status to the query string
             if '?' in data['return_url']:
