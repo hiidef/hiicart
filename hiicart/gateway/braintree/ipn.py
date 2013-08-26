@@ -1,9 +1,13 @@
+import logging
 import braintree
 from datetime import datetime
 from decimal import Decimal
 from hiicart.gateway.base import IPNBase, TransactionResult, SubscriptionResult
 from hiicart.gateway.braintree.settings import SETTINGS as default_settings
 from hiicart.models import CART_TYPES
+
+logger = logging.getLogger('hiicart.gateway.braintree.gateway')
+
 
 BRAINTREE_STATUS = {"PAID": ["settled", "authorized", 
                              "submitted_for_settlement"],
@@ -118,6 +122,7 @@ class BraintreeIPN(IPNBase):
                     transaction = subscription.transactions[-1]
         else:
             transaction = braintree.Transaction.find(transaction_id)
+        logger.info("IPN Received (cart: %s, transaction_id: %s): %s" % (self.cart.pk, transaction_id, unicode(repr(transaction.__dict__), errors='ignore')));
         if transaction:
             payment = self.accept_payment(transaction)
             if payment:
