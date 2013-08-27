@@ -9,7 +9,7 @@ from hiicart.models import CART_TYPES
 logger = logging.getLogger('hiicart.gateway.braintree.gateway')
 
 
-BRAINTREE_STATUS = {"PAID": ["settled", "authorized", 
+BRAINTREE_STATUS = {"PAID": ["settled", "authorized", "settling",
                              "submitted_for_settlement"],
                     "PENDING": ["authorizing"],
                     "FAILED": ["failed", "gateway_rejected",
