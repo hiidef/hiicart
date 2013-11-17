@@ -91,7 +91,7 @@ class BraintreeGateway(PaymentGatewayBase):
             if self.settings.get('MERCHANT_ACCOUNT_ID'):
                 data['transaction']['merchant_account_id'] = self.settings['MERCHANT_ACCOUNT_ID']
             if self.settings.get('MERCHANT_NAME'):
-                data['transaction']['descriptor'] = {
+                data['descriptor'] = {
                     'name': '%s*' % self.settings['MERCHANT_NAME'],
                 }
 
