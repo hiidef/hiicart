@@ -61,6 +61,8 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
         params_dict['pwd'] = self.settings['API_PASSWORD']
         params_dict['signature'] = self.settings['API_SIGNATURE']
         params_dict['version'] = self.settings['API_VERSION']
+        if self.settings.get("BN"):
+            params_dict["bn"] = self.settings["BN"]
         encoded_params = urllib.urlencode(params_dict)
 
         response, content = http.request(self._nvp_url, 'POST', encoded_params)
@@ -69,7 +71,7 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
             if type(v) == list:
                 response_dict[k] = v[0]
         if response_dict['ACK'] != 'Success':
-            raise GatewayError("Error calling Paypal %s" % method)
+            raise GatewayError("Error calling Paypal Express %s" % method)
         return response_dict
 
     def _create_redirect_url(self, token):
@@ -238,7 +240,7 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
         return params
 
     def _update_cart_details(self, details):
-        pre = 'paymentrequest_0_'
+        pre = 'PAYMENTREQUEST_0_'
 
         # Fill in shipping information
         property_names = {
@@ -346,22 +348,24 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
         # Can't validate credentials with Paypal AFAIK
         return True
 
-    def cancel_recurring(self, profileid):
+    def cancel_recurring(self, profileid=None):
         """Cancel recurring items with gateway. Returns a CancelResult."""
+        if not profileid:
+            item = self.cart.recurring_lineitems[0]
+            profileid = item.payment_token
+
         params = {
             'profileid': profileid,
             'action': 'cancel',
         }
-        try:
-            self._do_nvp('ManageRecurringPaymentsProfileStatus', params)
-            # make sure the line item is not acitive
-            item = self.cart.recurring_lineitems[0]
-            item.is_active = False
-            item.save()
-            self.cart.update_state()
-            return CancelResult(None)
-        except Exception, e:
-            raise e
+
+        self._do_nvp('ManageRecurringPaymentsProfileStatus', params)
+        # make sure the line item is not acitive
+        item = self.cart.recurring_lineitems[0]
+        item.is_active = False
+        item.save()
+        self.cart.update_state()
+        return CancelResult(None)
 
     def refund_payment(self, payment, reason=None):
         """

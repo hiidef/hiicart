@@ -1,3 +1,4 @@
+import logging
 import braintree
 from datetime import datetime
 from decimal import Decimal
@@ -5,9 +6,12 @@ from hiicart.gateway.base import IPNBase, TransactionResult, SubscriptionResult
 from hiicart.gateway.braintree.settings import SETTINGS as default_settings
 from hiicart.models import CART_TYPES
 
-BRAINTREE_STATUS = {"PAID": ["settled"],
-                    "PENDING": ["authorized", "authorizing",
-                                "submitted_for_settlement"],
+logger = logging.getLogger('hiicart.gateway.braintree.gateway')
+
+
+BRAINTREE_STATUS = {"PAID": ["settled", "authorized", "settling",
+                             "submitted_for_settlement"],
+                    "PENDING": ["authorizing"],
                     "FAILED": ["failed", "gateway_rejected",
                                "processor_declined", "settlement_failed"],
                     "CANCELLED": ["voided"]}
@@ -55,12 +59,15 @@ class BraintreeIPN(IPNBase):
         if payment:
             if payment[0].state != state:
                 payment[0].state = state
+                payment[0].created = transaction.created_at
                 payment[0].save()
                 return payment[0]
         else:
             payment = self._create_payment(transaction.amount,
                                            transaction.id, state)
+            payment.created = transaction.created_at
             payment.save()
+            self.cart.update_state()
             return payment
 
     def new_order(self, transaction):
@@ -115,6 +122,7 @@ class BraintreeIPN(IPNBase):
                     transaction = subscription.transactions[-1]
         else:
             transaction = braintree.Transaction.find(transaction_id)
+        logger.info("IPN Received (cart: %s, transaction_id: %s): %s" % (self.cart.pk, transaction_id, unicode(repr(transaction.__dict__), errors='ignore')));
         if transaction:
             payment = self.accept_payment(transaction)
             if payment:

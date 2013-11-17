@@ -6,12 +6,14 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 from hiicart.models import HiiCart, LineItem, RecurringLineItem
+from hiicart import settings as hsettings
 
 class HiiCartTestCase(base.HiiCartTestCase):
     """Basic tests to ensure HiiCart is working."""
 
     def _submit_recurring(self):
         settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
+        hsettings.SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = True
         self.assertEqual(self.cart.state, "OPEN")
         self._add_recurring_item()
         result = self.cart.submit("comp")
@@ -19,7 +21,8 @@ class HiiCartTestCase(base.HiiCartTestCase):
         self.assertEqual(self.cart.state, "RECURRING")
 
     def _submit_recurring_norecur(self):
-        settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] =False
+        settings.HIICART_SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = False
+        hsettings.SETTINGS["COMP"]["ALLOW_RECURRING_COMP"] = False
         self.assertEqual(self.cart.state, "OPEN")
         self._add_recurring_item()
         result = self.cart.submit("comp")
@@ -94,18 +97,12 @@ class HiiCartTestCase(base.HiiCartTestCase):
         newdate = datetime.now() + timedelta(days=120)
         self.cart.adjust_expiration(newdate)
         expiration = self.cart.get_expiration()
-        # 365/leap year assumption messing this up
-        # here, we set the new expiration date, but internally it gets set
-        # by taking a timedelta offset from the earliest payment to the old
-        # date, which ends up being 365 days instead of "one year"...  this
-        # might be more of a bug than the leap year issue above, but this
-        # function is for development purposes only
-        self.assertTrue(expiration.date() in
-            (newdate.date(), newdate.date() - timedelta(days=1))
-        )
+        self.assertEqual(expiration.date(), newdate.date())
 
     def test_cancel_if_expired(self):
         """Test cancelling a cart when expired."""
+        # make sure no grace periods in the settings mess with this
+        hsettings.SETTINGS["EXPIRATION_GRACE_PERIOD"] = timedelta(hours=1)
         cart_base = self.cart.clone()
         # RECURRING -> CANCELLED
         self._submit_recurring()
@@ -123,6 +120,8 @@ class HiiCartTestCase(base.HiiCartTestCase):
 
     def test_cancel_if_expired_grace_period(self):
         """Test cancelling a cart when expired after a grace period."""
+        # make sure no grace periods in the settings mess with this
+        hsettings.SETTINGS["EXPIRATION_GRACE_PERIOD"] = timedelta(hours=1)
         cart_base = self.cart.clone()
         # RECURRING -> CANCELLED
         self._submit_recurring()

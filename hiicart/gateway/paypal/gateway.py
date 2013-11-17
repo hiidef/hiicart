@@ -92,7 +92,6 @@ class PaypalGateway(PaymentGatewayBase):
             if type(v) == list:
                 response_dict[k] = v[0]
         if response_dict['ACK'] != 'Success':
-            print response_dict
             raise GatewayError("Error calling Paypal %s" % method)
         return response_dict
 
@@ -155,6 +154,8 @@ class PaypalGateway(PaymentGatewayBase):
             submit["cancel_return"] = self.settings["CANCEL_RETURN"]
         if self.settings.get("CBT"):
             submit["cbt"] = self.settings["CBT"]
+        if self.settings.get("BN"):
+            submit["bn"] = self.settings["BN"]
         #TODO: eventually need to work out the terrible PayPal shipping stuff
         #      for now, we are saying "no shipping" and adding all shipping as
         #      a handling charge.
@@ -249,14 +250,6 @@ class PaypalGateway(PaymentGatewayBase):
         # Can't validate credentials with Paypal AFAIK
         return True
 
-    def cancel_recurring(self):
-        """Cancel recurring items with gateway. Returns a CancelResult."""
-        alias = self.settings["BUSINESS"]
-        url = "%s?cmd=%s&alias=%s" % (self.submit_url,
-                                      PAYMENT_CMD["UNSUBSCRIBE"],
-                                      self.settings["BUSINESS"])
-        return CancelResult("url", url=url)
-
     def charge_recurring(self, grace_period=None):
         """This Paypal API doesn't support manually charging subscriptions."""
         pass
@@ -301,8 +294,21 @@ class PaypalGateway(PaymentGatewayBase):
         response = self._do_nvp('GetTransactionDetails', params)
         return response
 
-    def get_recurring_payments_profile_details(self, subscription_id):
-        params = {}
-        params['profileid'] = subscription_id
-        response = self._do_nvp('GetRecurringPaymentsProfileDetails', params)
-        return response
+    def cancel_recurring(self, profileid=None):
+        """Cancel recurring items with gateway. Returns a CancelResult."""
+        if not profileid:
+            item = self.cart.recurring_lineitems[0]
+            profileid = item.payment_token
+
+        params = {
+            'profileid': profileid,
+            'action': 'cancel',
+        }
+
+        self._do_nvp('ManageRecurringPaymentsProfileStatus', params)
+        # make sure the line item is not acitive
+        item = self.cart.recurring_lineitems[0]
+        item.is_active = False
+        item.save()
+        self.cart.update_state()
+        return CancelResult(None)

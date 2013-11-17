@@ -1,18 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+""" """
+
 import logging
 
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_view_exempt
 from django.shortcuts import render_to_response
 from hiicart.gateway.base import GatewayError
 from hiicart.gateway.authorizenet.ipn import AuthorizeNetIPN
 from hiicart.gateway.authorizenet.gateway import AuthorizeNetGateway
-from hiicart.utils import format_exceptions, cart_by_uuid
+from hiicart.utils import format_exceptions, cart_by_uuid, format_data
 from urllib import unquote_plus
 from urlparse import parse_qs
 
 
-log = logging.getLogger("hiicart.gateway.authorizenet")
+logger = logging.getLogger("hiicart.gateway.authorizenet")
 
 
 def _find_cart(data):
@@ -27,8 +32,11 @@ def ipn(request):
     Authorize.net Payment Notification
     """
     if request.method != "POST":
-        return HttpResponse("Requests must be POSTed")
+        logger.error("IPN Request not POSTed")
+        return HttpResponseBadRequest("Requests must be POSTed")
+
     data = request.POST.copy()
+
     # Authorize sends us info urlencoded as latin1
     # So, if we end up with the unicode char in our processed POST that means
     # "unknown char" (\ufffd), try to transcode from latin1
@@ -39,17 +47,14 @@ def ipn(request):
                 data.update({key: unicode(unquote_plus(parsed_raw[key][-1]), 'latin1')})
             except:
                 pass
-    log.info("IPN Notification received from Authorize.net: %s" % data)
-    try:
-        log.info("IPN Notification received from Authorize.net (raw): %s" % request.raw_post_data)
-    except:
-        pass
+
+    logger.info("IPN Received:\n%s" % format_data(data))
     cart = _find_cart(data)
     if not cart:
         raise GatewayError('Authorize.net gateway: Unknown transaction')
     handler = AuthorizeNetIPN(cart)
     if not handler.confirm_ipn_data(data):
-        log.error("Authorize.net IPN Confirmation Failed.")
+        logger.error("Authorize.net IPN Confirmation Failed.")
         raise GatewayError("Authorize.net IPN Confirmation Failed.")
     handler.record_form_data(data)
 

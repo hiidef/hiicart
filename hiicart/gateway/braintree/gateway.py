@@ -1,17 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Braintree Gateway"""
+
 import logging
 import braintree
 
 from django.template import Context, loader
 
-from hiicart.gateway.base import PaymentGatewayBase, CancelResult, SubmitResult, TransactionResult, SubscriptionResult, GatewayError
+from hiicart.gateway.base import PaymentGatewayBase, CancelResult, SubmitResult,\
+        TransactionResult, SubscriptionResult, GatewayError
 from hiicart.gateway.braintree.forms import make_form
 from hiicart.gateway.braintree.ipn import BraintreeIPN
 from hiicart.gateway.braintree.settings import SETTINGS as default_settings
 from hiicart.gateway.braintree.tasks import update_payment_status
 from hiicart.models import HiiCart
 
-log = logging.getLogger('hiicart.gateway.braintree.gateway')
-
+logger = logging.getLogger('hiicart.gateway.braintree.gateway')
 
 class BraintreeGateway(PaymentGatewayBase):
     """Payment Gateway for Braintree."""
@@ -156,7 +161,7 @@ class BraintreeGateway(PaymentGatewayBase):
         try:
             update_payment_status.apply_async(args=[self.cart.id, transaction_id], kwargs={'cart_class': cart_class}, countdown=300)
         except Exception, e:
-            log.error("Error updating payment status for transaction %s: %s" % (transaction_id, e))
+            logger.error("Error updating payment status for transaction %s: %s" % (transaction_id, e))
 
     def create_discount_args(self, discount_id, num_billing_cycles=1, quantity=1, existing_discounts=None):
         if not existing_discounts:
@@ -193,7 +198,7 @@ class BraintreeGateway(PaymentGatewayBase):
         """
         subscription = braintree.Subscription.find(subscription_id)
         existing_discounts = filter(lambda d: d.id == discount_id, subscription.discounts)
-        args = self.create_discount_args(discount_id, num_bulling_cycles, quantity, existing_discounts)
+        args = self.create_discount_args(discount_id, num_billing_cycles, quantity, existing_discounts)
         result = braintree.Subscription.update(subscription_id, args)
         errors = {}
         if result.is_success:
@@ -214,8 +219,17 @@ class BraintreeGateway(PaymentGatewayBase):
             return None
         subscription_id = self.cart.recurring_lineitems[0].payment_token
         result = braintree.Subscription.cancel(subscription_id)
+        if result.subscription:
+            status = result.subscription.status
+        else:
+            status='Canceled'
+        # make sure the line item is not acitive
+        item = self.cart.recurring_lineitems[0]
+        item.is_active = False
+        item.save()
+        self.cart.update_state()
         return SubscriptionResult(transaction_id=subscription_id,
-                                  success=result.is_success, status=result.subscription.status,
+                                  success=result.is_success, status=status,
                                   gateway_result=result)
 
     def charge_recurring(self, grace_period=None):
@@ -332,5 +346,9 @@ class BraintreeGateway(PaymentGatewayBase):
     def refund(self, payment, amount, reason=None):
         result = braintree.Transaction.refund(payment.transaction_id, amount)
         if result.is_success:
+            transaction_id = result.transaction.id
             self._create_payment(amount * -1, result.transaction.id, 'REFUND')
-        return TransactionResult(transaction_id=result.transaction.id, success=result.is_success, status=None, errors={}, gateway_result=result)
+            self.cart.update_state()
+        else:
+            transaction_id = None
+        return TransactionResult(transaction_id=transaction_id, success=result.is_success, status=None, errors={}, gateway_result=result)

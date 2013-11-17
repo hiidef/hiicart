@@ -62,6 +62,8 @@ class PaymentForm(forms.Form):
     x_ship_to_state = forms.CharField(max_length=50)
     x_ship_to_zip = forms.CharField(max_length=30)
     x_ship_to_country = forms.CharField(max_length=2)
+    shipping_street_address2 = forms.CharField(required=False)
+    billing_street_address2 = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PaymentForm, self).__init__(*args, **kwargs)
@@ -77,7 +79,7 @@ class PaymentForm(forms.Form):
     def set_transaction(self, data):
         self._submit_url = data['submit_url']
         for key in data:
-            if key[:2] == 'x_' or key == "return_url" or key == "cart_id":
+            if key in self.fields.keys():
                 if self.is_bound:
                     self.data[key] = data[key]
                 else:

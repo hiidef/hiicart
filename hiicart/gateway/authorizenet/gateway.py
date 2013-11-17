@@ -1,7 +1,8 @@
 import hmac
 import random
 import time
-import urlparse
+import re
+from urlparse import urlsplit, urlunsplit, parse_qs, urljoin
 
 from django.contrib.sessions.backends.db import SessionStore
 from hiicart.models import PaymentResponse
@@ -59,7 +60,7 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                                          timestamp, timestamp, self.cart.total)
         fp_hash = hmac.new(str(self.settings['MERCHANT_KEY']), hash_message)
         data = {'submit_url': self.submit_url,
-                'return_url': request.build_absolute_uri(request.path),
+                'return_url': request.build_absolute_uri(),
                 'cart_id': self.cart.cart_uuid,
                 'x_invoice_num': timestamp,
                 'x_fp_hash': fp_hash.hexdigest(),
@@ -72,6 +73,8 @@ class AuthorizeNetGateway(PaymentGatewayBase):
                 'x_method': 'CC',
                 'x_type': 'AUTH_CAPTURE',
                 'x_version': '3.1'}
+        if request.META.get('HTTP_X_FORWARDED_PROTO') == 'https':
+            data['return_url'] = data['return_url'].replace('http:', 'https:')
         if not self.settings['LIVE']:
             # Set this value to false to get a real transaction # returned when running on
             # sandbox.  A real transaction is required to for testing refunds.
@@ -90,18 +93,37 @@ class AuthorizeNetGateway(PaymentGatewayBase):
     def set_response(self, data):
         """Store payment result for confirm_payment."""
 
-        response = PaymentResponse()
-        response.cart = self.cart
-        response.response_code = int(data['x_response_reason_code'])
-        response.response_text = data['x_response_reason_text']
-        response.save()
+        response, created = PaymentResponse.objects.get_or_create(cart=self.cart, defaults={
+                'response_code': int(data['x_response_reason_code']),
+                'response_text': data['x_response_reason_text']
+                })
+        if not created:
+            response.response_code = int(data['x_response_reason_code'])
+            response.response_text = data['x_response_reason_text']
+            response.save()
         
         if response.response_code == 1:
             # Successful directly goto the payment_thanks page
-            data['return_url'] = urlparse.urljoin(data['return_url'], "payment_thanks")
+            (scheme, host, path, paramstr, fragment) = list(urlsplit(data['return_url']))
+            params = parse_qs(paramstr)
+
+            if 'cd' in params:
+                host = params['cd'][0]
+                scheme = 'http'
+
+            match = re.search(r'^(.*/checkout)(/[\w\-]+)$', path)
+            if match:
+                path = match.group(1)
+
+            return_url = urlunsplit((scheme, host, path, paramstr, fragment))
+
+            data['return_url'] = urljoin(return_url, "payment_thanks")
         else:
             # Mimic the braintree redirect behavior of appending http_status to the query string
-            data['return_url'] = data['return_url'] + "?http_status=200"
+            if '?' in data['return_url']:
+                data['return_url'] = data['return_url'] + '&http_status=200'
+            else:
+                data['return_url'] = data['return_url'] + "?http_status=200"
 
     def confirm_payment(self, request):
         """
@@ -114,7 +136,6 @@ class AuthorizeNetGateway(PaymentGatewayBase):
             else:
                 result = PaymentResult('transaction', success=False, status="DECLINED", errors=response.response_text, 
                                        gateway_result=response.response_code)
-            response.delete()
         else:
             result = PaymentResult('transaction', success=False, status=None, errors="Failed to process transaction")
         return result

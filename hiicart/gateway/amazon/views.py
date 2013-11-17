@@ -1,21 +1,26 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Amazon Views"""
+
 import logging
-import pprint
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_view_exempt
 from hiicart.gateway.amazon.ipn import AmazonIPN
-from hiicart.gateway.base import GatewayError
 from hiicart.gateway.countries import COUNTRIES
-from hiicart.utils import format_exceptions, cart_by_uuid
+from hiicart.utils import format_exceptions, cart_by_uuid, format_data
+from hiicart.models import HiiCart
 
-
-log = logging.getLogger("hiicart.gateway.amazon")
+logger = logging.getLogger("hiicart.gateway.amazon")
 
 
 def _find_cart(request_data):
     # Subscription payments look like '<uuid>-4' so grab the uuid id
-    uuid = request_data["callerReference"][:36]
-    return cart_by_uuid(uuid)
+    if 'callerReference' in request_data and len(request_data['callerReference']) >= 36:
+        uuid = request_data["callerReference"][:36]
+        return cart_by_uuid(uuid)
+    return None
 
 
 @csrf_view_exempt
@@ -23,31 +28,39 @@ def _find_cart(request_data):
 @never_cache
 def cbui(request, settings=None):
     """
-    View used when the Co-Branded UI returns.
-
-    This view verifies that the CBUI returned successfully and
-    uses the provided authorization to initiate a Pay request.
+    Verify that the Co-Branded UI returned successfully and use the
+    provided authorization to  initiate a Pay request.
     """
-    log.debug("CBUI Received: \n%s" % pprint.pformat(dict(request.GET), indent=10))
+    logger.debug("CBUI Received: \n%s" % format_data(request.GET))
     if "errorMessage" in request.GET:
+        logger.error("CBUI error message: %s" % request.GET["errorMessage"])
         raise Exception(request.GET["errorMessage"])
-    else:    
+    else:
         cart = _find_cart(request.GET)
+    if not cart:
+        logger.error("Unable to find cart.")
+        cart = HiiCart()
+        handler = AmazonIPN(cart)
+        cart = None
+        return HttpResponseRedirect(handler.settings.get("ERROR_RETURN_URL",
+                                    handler.settings.get("RETURN_URL", "/")))
     handler = AmazonIPN(cart)
     handler._update_with_cart_settings(cart_settings_kwargs={'request': request})
     if not cart:
-        log.error("Unable to find cart.")
+        logger.error("Unable to find cart.")
         return HttpResponseRedirect(handler.settings.get("ERROR_RETURN_URL",
                                     handler.settings.get("RETURN_URL", "/")))
     if not handler.verify_signature(request.GET.urlencode(), "GET", handler.settings["CBUI_RETURN_URL"]):
-        log.error("Validation of Amazon request failed!")
+        logger.error("Validation of Amazon request failed!")
         return HttpResponseRedirect(handler.settings.get("ERROR_RETURN_URL",
                                     handler.settings.get("RETURN_URL", "/")))
     if request.GET["status"] not in ("SA", "SB", "SC"):
-        log.error("CBUI unsuccessful. Status code: %s" % request.GET["status"])
+        logger.error("CBUI unsuccessful. Status code: %s" % request.GET["status"])
         return HttpResponseRedirect(handler.settings.get("CANCEL_RETURN_URL",
                                     handler.settings.get("RETURN_URL", "/")))
     # Address collection. Any data already in cart is assumed correct
+    # FIXME: should we be assuming data in the cart is correct?  does it matter?
+    # can a customer update a mistake in the shipping address after purchase?
     cart.bill_first_name = cart.bill_first_name or request.GET.get("billingName", "")
     cart.ship_first_name = cart.ship_first_name or request.GET.get("addressName", "")
     cart.bill_street1 = cart.bill_street1 or request.GET.get("addressLine1", "")
@@ -74,9 +87,9 @@ def cbui(request, settings=None):
         else:
             handler.begin_recurring()
     else:
-        log.debug("Making pay request: %s" % request.GET['tokenID'])
+        logger.debug("Making pay request: %s" % request.GET['tokenID'])
         result = handler.make_pay_request(request.GET["tokenID"])
-        log.debug("Pay request result: %s" % result)
+        logger.debug("Pay request result: %s" % result)
     if 'RETURN_URL' in handler.settings:
         return HttpResponseRedirect(handler.settings['RETURN_URL'])
     return HttpResponseRedirect("/")
@@ -87,21 +100,26 @@ def cbui(request, settings=None):
 @never_cache
 def ipn(request):
     """Instant Payment Notification handler."""
-    log.debug("IPN Received: \n%s" % pprint.pformat(dict(request.POST), indent=10))
+    if request.method != "POST":
+        logger.error("IPN Request not POSTed")
+        return HttpResponseBadRequest("Requests must be POSTed")
+
+    logger.debug("IPN Received:\n%s" % format_data(request.POST))
     cart = _find_cart(request.POST)
     if not cart:
-        log.error('amazon gateway: Unknown transaction')
+        logger.error("amazon gateway: Unknown transaction")
         return HttpResponse()
     handler = AmazonIPN(cart)
-    handler._update_with_cart_settings(cart_settings_kwargs={'request': request})
+    handler._update_with_cart_settings(cart_settings_kwargs={"request": request})
     if not handler.verify_signature(request.POST.urlencode(), "POST", handler.settings["IPN_URL"]):
-        log.error("Validation of Amazon request failed!")
+        logger.error("Validation of Amazon request failed!")
         return HttpResponseBadRequest("Validation of Amazon request failed!")
     if not cart:
-        log.error("Unable to find cart.")
+        logger.error("Unable to find cart.")
         return HttpResponseBadRequest()
     if request.POST["notificationType"] == "TransactionStatus":
         handler.accept_payment(request.POST)
     elif request.POST["notificationType"] == "TokenCancellation":
         handler.end_recurring(request.POST.get("tokenId", None))
     return HttpResponse()
+
