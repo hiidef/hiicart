@@ -118,7 +118,7 @@ class VeritransAirGateway(PaymentGatewayBase):
             params['COMMODITY_UNIT'].append(item.unit_price.quantize(Decimal('1')))
             params['COMMODITY_NUM'].append(item.quantity)
             params['COMMODITY_ID'].append(item.sku)
-        print params
+
         return params
 
 
