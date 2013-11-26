@@ -184,12 +184,12 @@ class VeritransAirGateway(PaymentGatewayBase):
         """
         return SubmitResult("direct")
 
-    def start_transaction(self, request):
+    def start_transaction(self, request, **kwargs):
         """
         Veritrans Air doesn't need anything special to start a transaction before tokenization.
         Just get the URL for the form action.
         """
-        data = {'submit_url': request.path}
+        data = {'submit_url': kwargs.get('submit_url')}
         for f, m in FORM_MODEL_TRANSLATION.iteritems():
             data[f] = getattr(self.cart, m)
         return data
