@@ -1,6 +1,6 @@
 """Settings for Veritrans Air gateway
 
-**Required settings:**
+g**Required settings:**
  * *MERCHANT_ID*
  * *MERCHANTHASH*
  * *SESSION_ID*
@@ -14,7 +14,6 @@
 """
 
 SETTINGS = {
-    'LIVE': False,
     'SETTLEMENT_TYPE': '00',
     'CARD_CAPTURE_FLAG': '1'
     }
