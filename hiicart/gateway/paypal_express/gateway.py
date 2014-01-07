@@ -182,8 +182,8 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
 
         # Add one-time line items
         for item in self.cart.one_time_lineitems:
-            params[pre + 'name%i' % idx] = item.name
-            params[pre + 'desc%i' % idx] = item.description
+            params[pre + 'name%i' % idx] = unicode(item.name).encode('utf-8')
+            params[pre + 'desc%i' % idx] = unicode(item.description).encode('utf-8')
             params[pre + 'amt%i' % idx] = item.total.quantize(Decimal('.01'))
             params[pre + 'qty%i' % idx] = item.quantity
             params[pre + 'number%i' % idx] = item.sku
@@ -210,7 +210,7 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
 
         params['currencycode'] = self.settings['CURRENCY_CODE']
         params['amt'] = item.recurring_price
-        params['desc'] = item.description
+        params['desc'] =  unicode(item.description).encode('utf-8')
         params['shippingamt'] = item.recurring_shipping
         params['profilereference'] = self.cart.cart_uuid
         if self._is_immediate_payment(item):
