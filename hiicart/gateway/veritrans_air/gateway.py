@@ -39,7 +39,6 @@ class VeritransAirGateway(PaymentGatewayBase):
             params_dict["DUMMY_PAYMENT_FLAG"] = "1"
 
         params_pairs = []
-        print params_dict
         for (key, val) in params_dict.iteritems():
             if isinstance(val, (list, tuple)):
                 for v in val:
