@@ -39,6 +39,7 @@ class VeritransAirGateway(PaymentGatewayBase):
             params_dict["DUMMY_PAYMENT_FLAG"] = "1"
 
         params_pairs = []
+        print params_dict
         for (key, val) in params_dict.iteritems():
             if isinstance(val, (list, tuple)):
                 for v in val:
@@ -109,15 +110,15 @@ class VeritransAirGateway(PaymentGatewayBase):
         # params['MAILADDRESS'] = self.cart.bill_email
 
         # Add one-time line items
-        params['COMMODITY_ID'] = []
-        params['COMMODITY_UNIT'] = []
-        params['COMMODITY_NUM'] = []
-        params['COMMODITY_NAME'] = []
-        for item in self.cart.one_time_lineitems:
-            params['COMMODITY_NAME'].append(item.name)
-            params['COMMODITY_UNIT'].append(item.unit_price.quantize(Decimal('1')))
-            params['COMMODITY_NUM'].append(item.quantity)
-            params['COMMODITY_ID'].append(item.sku)
+        # params['COMMODITY_ID'] = []
+        # params['COMMODITY_UNIT'] = []
+        # params['COMMODITY_NUM'] = []
+        # params['COMMODITY_NAME'] = []
+        # for item in self.cart.one_time_lineitems:
+        #     params['COMMODITY_NAME'].append(item.name)
+        #     params['COMMODITY_UNIT'].append(item.unit_price.quantize(Decimal('1')))
+        #     params['COMMODITY_NUM'].append(item.quantity)
+        #     params['COMMODITY_ID'].append(item.sku)
 
         return params
 
