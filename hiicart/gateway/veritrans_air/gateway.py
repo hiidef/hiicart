@@ -87,7 +87,7 @@ class VeritransAirGateway(PaymentGatewayBase):
             params['ERROR_PAYMENT_RETURN_URL'] = self.settings['ERROR_PAYMENT_RETURN_URL']
 
         params['ORDER_ID'] = self.cart.id
-        params['AMOUNT'] = self.cart.total.quantize(Decimal('1'))
+        params['AMOUNT'] = Decimal(self.cart.total).quantize(Decimal('1'))
 
         params['MERCHANTHASH'] = hashlib.sha512(b"%s,%s,%s,%s,%s" % (self.settings["MERCHANT_KEY"], 
                                                                     self.settings["MERCHANT_ID"],
