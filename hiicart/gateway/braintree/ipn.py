@@ -143,14 +143,14 @@ class BraintreeIPN(IPNBase):
                 payment[0].save()
             status = 'success'
         else:
-            status = result.transaction.status if hasattr(result, 'transaction') else 'error'
+            status = result.transaction.status if getattr(result, 'transaction', None) else 'error'
         return TransactionResult(transaction_id=transaction_id,
                                  success=result.is_success, status=status,
                                  gateway_result=result)
 
     def create_subscription(self, payment_method, gateway_plan_id=None, gateway_dict=None):
         item = self.cart.recurring_lineitems[0]
-        
+
         if not gateway_plan_id:
             plan_id_by_sku = self.settings.get('PLAN_ID_BY_SKU', {})
             gateway_plan_id = plan_id_by_sku.get(item.sku, None)
