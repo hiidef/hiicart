@@ -59,7 +59,11 @@ def _base_paypal_ipn_listener(request, ipn_class):
             try:
                 data.update({key: unicode(unquote_plus(parsed_raw[key][-1]), 'cp1252')})
             except:
-                pass
+                # Fallback to shift-jis if cp1252 fails
+                try:
+                    data.update({key: unicode(unquote_plus(parsed_raw[key][-1]), 'shift-jis')})
+                except:
+                    pass
     txn_type = data.get("txn_type", "")
     status = data.get("payment_status", "unknown")
     if txn_type == "subscr_cancel" or txn_type == "subscr_eot":
