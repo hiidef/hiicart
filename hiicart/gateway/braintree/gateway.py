@@ -58,7 +58,7 @@ class BraintreeGateway(PaymentGatewayBase):
         """Returns an instance of PaymentForm."""
         return make_form(self.is_recurring)()
 
-    def start_transaction(self, request):
+    def start_transaction(self, request, **kwargs):
         """
         Submits transaction details to Braintree and returns form data.
         If we're processing a one-time sale, submit the transaction for settlement
