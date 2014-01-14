@@ -5,6 +5,7 @@ import hiicart.gateway.paypal2.urls
 import hiicart.gateway.paypal_adaptive.urls
 import hiicart.gateway.authorizenet.urls
 import hiicart.gateway.paypal_express.urls
+import hiicart.gateway.veritrans_air.urls
 
 from django.conf.urls.defaults import *
 
@@ -16,5 +17,6 @@ urlpatterns = patterns('',
     (r'^paypal2/',                  include(hiicart.gateway.paypal2.urls)),
     (r'^paypal_adaptive/',          include(hiicart.gateway.paypal_adaptive.urls)),
     (r'^paypal_express/',           include(hiicart.gateway.paypal_express.urls)),
+    (r'^veritrans_air/',            include(hiicart.gateway.veritrans_air.urls)),
     (r'^authorizenet/',             include(hiicart.gateway.authorizenet.urls)),
 )

@@ -65,11 +65,13 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
             params_dict["bn"] = self.settings["BN"]
         encoded_params = urllib.urlencode(params_dict)
 
-        response, content = http.request(self._nvp_url, 'POST', encoded_params)
+        headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
+        response, content = http.request(self._nvp_url, 'POST', body=encoded_params, headers=headers)
         response_dict = parse_qs(content)
         for k, v in response_dict.iteritems():
             if type(v) == list:
                 response_dict[k] = v[0]
+
         if response_dict['ACK'] != 'Success':
             raise GatewayError("Error calling Paypal Express %s" % method)
         return response_dict
@@ -164,8 +166,8 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
         if len(self.cart.recurring_lineitems) > 0:
             item = self.cart.recurring_lineitems[0]
             params['l_billingtype%i' % idx] = 'RecurringPayments'
-            params['l_billingagreementdescription%i' % idx] = item.description
-            params[pre + 'name%i' % idx] = item.name
+            params['l_billingagreementdescription%i' % idx] = unicode(item.description).encode('utf-8')
+            params[pre + 'name%i' % idx] = unicode(item.name).encode('utf-8')
             params[pre + 'number%i' % idx] = item.sku
 
             if self._is_immediate_payment(item):
@@ -180,8 +182,8 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
 
         # Add one-time line items
         for item in self.cart.one_time_lineitems:
-            params[pre + 'name%i' % idx] = item.name
-            params[pre + 'desc%i' % idx] = item.description
+            params[pre + 'name%i' % idx] = unicode(item.name).encode('utf-8')
+            params[pre + 'desc%i' % idx] = unicode(item.description).encode('utf-8')
             params[pre + 'amt%i' % idx] = item.total.quantize(Decimal('.01'))
             params[pre + 'qty%i' % idx] = item.quantity
             params[pre + 'number%i' % idx] = item.sku
@@ -208,7 +210,7 @@ class PaypalExpressCheckoutGateway(PaymentGatewayBase):
 
         params['currencycode'] = self.settings['CURRENCY_CODE']
         params['amt'] = item.recurring_price
-        params['desc'] = item.description
+        params['desc'] =  unicode(item.description).encode('utf-8')
         params['shippingamt'] = item.recurring_shipping
         params['profilereference'] = self.cart.cart_uuid
         if self._is_immediate_payment(item):

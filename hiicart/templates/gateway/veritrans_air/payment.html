@@ -1,0 +1,7 @@
+<div id="checkout_form" class="container" style="margin:20px;color:white;">
+    <form id="veritrans_form" action="{{ url }}" method="post" onload="submit();" target="_top">
+        {% for field,val in fields.items %}
+            <input type="hidden" name="{{ field }}" value="{{ val|escape }}">
+        {% endfor %}
+    </form>
+</div>
