@@ -26,6 +26,14 @@ def _find_cart(data):
     return cart_by_uuid(invoice[:36])
 
 
+def try_charset(value, charset):
+    decoded = unicode(unquote_plus(value), charset)
+    # Check for invalid chars after decoding
+    if u'\ufffd' in decoded or u'\x1a' in decoded:
+        raise "Invalid encoding"
+    return decoded
+
+
 def _base_paypal_ipn_listener(request, ipn_class):
     """
     PayPal IPN (Instant Payment Notification)
@@ -55,13 +63,21 @@ def _base_paypal_ipn_listener(request, ipn_class):
     # "unknown char" (\ufffd), try to transcode from cp1252
     parsed_raw = parse_qs(request.raw_post_data)
     for key, value in data.iteritems():
-        if u'\ufffd' in value:
+        # If paypal provided a charset attempt to decode with that
+        if (u'\ufffd' in value or u'\x1a' in value) and 'charset' in data:
             try:
-                data.update({key: unicode(unquote_plus(parsed_raw[key][-1]), 'cp1252')})
+                data[key] = value = try_charset(parsed_raw[key][-1], data['charset'])
+            except Exception, e:
+                pass
+
+        # Otherwise fallback to original behavior
+        if u'\ufffd' in value or u'\x1a' in value:
+            try:
+                data[key] = try_charset(parsed_raw[key][-1], 'cp1252')
             except:
                 # Fallback to shift-jis if cp1252 fails
                 try:
-                    data.update({key: unicode(unquote_plus(parsed_raw[key][-1]), 'shift-jis')})
+                    data[key] = try_charset(parsed_raw[key][-1], 'shift-jis')
                 except:
                     pass
     txn_type = data.get("txn_type", "")
