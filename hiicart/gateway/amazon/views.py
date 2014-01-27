@@ -6,7 +6,7 @@
 import logging
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
+from django.views.decorators.csrf import csrf_exempt
 from hiicart.gateway.amazon.ipn import AmazonIPN
 from hiicart.gateway.countries import COUNTRIES
 from hiicart.utils import format_exceptions, cart_by_uuid, format_data
@@ -23,7 +23,7 @@ def _find_cart(request_data):
     return None
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def cbui(request, settings=None):
@@ -95,7 +95,7 @@ def cbui(request, settings=None):
     return HttpResponseRedirect("/")
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):
@@ -122,4 +122,3 @@ def ipn(request):
     elif request.POST["notificationType"] == "TokenCancellation":
         handler.end_recurring(request.POST.get("tokenId", None))
     return HttpResponse()
-

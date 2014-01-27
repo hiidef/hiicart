@@ -1,7 +1,5 @@
-import hiicart.gateway.google.views
+from django.conf.urls import patterns
 
-from django.conf.urls.defaults import *
-
-urlpatterns = patterns('',  
-    (r'ipn/?$',                                    'hiicart.gateway.google.views.ipn'),
+urlpatterns = patterns('',
+    (r'ipn/?$', 'hiicart.gateway.google.views.ipn'),
 )

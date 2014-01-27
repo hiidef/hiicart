@@ -1,17 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" """
-
 import logging
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
-from hiicart.gateway.base import GatewayError
+from django.views.decorators.csrf import csrf_exempt
 from hiicart.gateway.veritrans_air.ipn import VeritransAirIPN
 from hiicart.utils import format_exceptions, cart_by_id, format_data
-from urllib import unquote_plus
-from urlparse import parse_qs
 
 
 logger = logging.getLogger("hiicart.gateway.veritrans_air")
@@ -26,7 +21,7 @@ def _find_cart(data):
     return cart_by_id(order)
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):
@@ -52,8 +47,6 @@ def ipn(request):
         return HttpResponse("ERR")
 
     status = data["mStatus"]
-    result_code = data["vResultCode"]
-    msg = data["mErrMsg"]
 
     if status == 'success':
         handler.accept_payment(data)

@@ -6,7 +6,7 @@
 import logging
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
+from django.views.decorators.csrf import csrf_exempt
 from hiicart.gateway.base import GatewayError
 from hiicart.gateway.paypal.ipn import PaypalIPN
 from hiicart.utils import format_exceptions, cart_by_uuid, format_data
@@ -67,7 +67,7 @@ def _base_paypal_ipn_listener(request, ipn_class):
         if (u'\ufffd' in value or u'\x1a' in value) and 'charset' in data:
             try:
                 data[key] = value = try_charset(parsed_raw[key][-1], data['charset'])
-            except Exception, e:
+            except Exception:
                 pass
 
         # Otherwise fallback to original behavior
@@ -94,15 +94,17 @@ def _base_paypal_ipn_listener(request, ipn_class):
         if hasattr(handler, "payment_pending"):
             handler.payment_pending(data)
         else:
-            logger.info("Unknown IPN type or status. Type: %s\tStatus: %s\nHandler: %r" %
-                 (txn_type, status, handler))
+            logger.info(
+                "Unknown IPN type or status. Type: %s\tStatus: %s\nHandler: %r" % (txn_type, status, handler)
+            )
     else:
-        logger.info("Unknown IPN type or status. Type: %s\tStatus: %s" %
-                 (txn_type, status))
+        logger.info(
+            "Unknown IPN type or status. Type: %s\tStatus: %s" % (txn_type, status)
+        )
     return HttpResponse()
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):

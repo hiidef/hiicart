@@ -7,9 +7,9 @@
 
 import logging
 import urllib
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest, Http404
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
+from django.views.decorators.csrf import csrf_exempt
 from hiicart.gateway.base import GatewayError
 from hiicart.gateway.paypal2 import api
 from hiicart.gateway.paypal2.ipn import Paypal2IPN
@@ -39,7 +39,7 @@ def _find_cart(data):
 #       gateways.
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):
@@ -59,7 +59,7 @@ def ipn(request):
     if not ipn.confirm_ipn_data(request.raw_post_data):
         logger.error("Paypal IPN Confirmation Failed.")
         raise GatewayError("Paypal IPN Confirmation Failed.")
-    if "txn_type" in data: # Inidividual Tranasction IPN
+    if "txn_type" in data:  # Inidividual Tranasction IPN
         if data["txn_type"] == "cart":
             ipn.accept_payment(data)
         elif data["txn_type"] == "recurring_payment_profile_created":
@@ -70,13 +70,13 @@ def ipn(request):
             ipn.recurring_payment_profile_cancelled(data)
         else:
             logger.info("Unknown txn_type: %s" % data["txn_type"])
-    else: #dunno
+    else:  # dunno
         logger.error("transaction_type not in IPN data.")
         raise GatewayError("transaction_type not in IPN.")
     return HttpResponse()
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def authorized(request):
@@ -92,13 +92,12 @@ def authorized(request):
     return HttpResponseRedirect(url)
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def do_pay(request):
-    if "token" not in request.POST or "PayerID" not in request.POST \
-        or "cart" not in request.POST:
-            raise GatewayError("Incorrect values POSTed to do_buy")
+    if "token" not in request.POST or "PayerID" not in request.POST or "cart" not in request.POST:
+        raise GatewayError("Incorrect values POSTed to do_buy")
     cart = cart_by_uuid(request.POST["cart"])
     ipn = Paypal2IPN(cart)
     if len(cart.one_time_lineitems) > 0:

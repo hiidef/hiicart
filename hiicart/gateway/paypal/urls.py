@@ -1,7 +1,5 @@
-import hiicart.gateway.paypal.views
-
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns
 
 urlpatterns = patterns('',
-    (r'ipn/?$',                                    'hiicart.gateway.paypal.views.ipn'),
+    (r'ipn/?$', 'hiicart.gateway.paypal.views.ipn'),
 )

@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" """
-
 import logging
 
-from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response
 from hiicart.gateway.base import GatewayError
 from hiicart.gateway.authorizenet.ipn import AuthorizeNetIPN
@@ -24,7 +22,7 @@ def _find_cart(data):
     return cart_by_uuid(data['cart_id'])
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):

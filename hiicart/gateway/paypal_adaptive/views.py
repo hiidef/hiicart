@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" """
-
 import logging
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
+from django.views.decorators.csrf import csrf_exempt
 from hiicart.gateway.base import GatewayError
 from hiicart.gateway.paypal_adaptive.ipn import PaypalAPIPN
 from hiicart.utils import format_exceptions, cart_by_uuid, format_data
@@ -24,7 +22,7 @@ def _find_cart(data):
     return cart_by_uuid(invoice[:36])
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):
@@ -44,17 +42,17 @@ def ipn(request):
     if not ipn.confirm_ipn_data(request.raw_post_data):
         logger.error("Paypal IPN Confirmation Failed.")
         raise GatewayError("Paypal IPN Confirmation Failed.")
-    if "transaction_type" in data: # Parallel/Chained Payment initiation IPN.
+    if "transaction_type" in data:  # Parallel/Chained Payment initiation IPN.
         if data["transaction_type"] == "Adaptive Payment PAY":
             ipn.accept_adaptive_payment(data)
         else:
             logger.info("Unknown txn_type: %s" % data["txn_type"])
-    elif "txn_type" in data: # Inidividual Tranasction IPN
+    elif "txn_type" in data:  # Inidividual Tranasction IPN
         if data["txn_type"] == "web_accept":
             ipn.accept_payment(data)
         else:
             logger.info("Unknown txn_type: %s" % data["txn_type"])
-    else: #dunno
+    else:  # dunno
         logger.error("transaction_type not in IPN data.")
         raise GatewayError("transaction_type not in IPN.")
     return HttpResponse()

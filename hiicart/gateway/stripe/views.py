@@ -1,25 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Strip Views"""
-
-from __future__ import absolute_import # Fix conflicting stripe module names
+from __future__ import absolute_import  # Fix conflicting stripe module names
 import logging
 
 import json
-import stripe
 from django.http import HttpResponseBadRequest, HttpResponse
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
-from hiicart.gateway.base import GatewayError
-from hiicart.gateway.stripe.ipn import StripeIPN
-from hiicart.utils import format_exceptions, cart_by_id, format_data
+from django.views.decorators.csrf import csrf_exempt
+from hiicart.utils import format_exceptions, format_data
 
 
 logger = logging.getLogger("hiicart.gateway.stripe")
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):
@@ -42,5 +37,3 @@ def ipn(request):
     #   invoice.payment_failed (for subscriptions)
 
     return HttpResponse()
-
-

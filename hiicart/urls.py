@@ -7,7 +7,7 @@ import hiicart.gateway.authorizenet.urls
 import hiicart.gateway.paypal_express.urls
 import hiicart.gateway.veritrans_air.urls
 
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, include
 
 urlpatterns = patterns('',
     (r'complete/?$',                'hiicart.views.complete'),
