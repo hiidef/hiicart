@@ -25,7 +25,7 @@ def ipn(request):
         logger.error("IPN Request not POSTed")
         return HttpResponseBadRequest("Requests must be POSTed")
 
-    data = json.loads(request.raw_post_data)
+    data = json.loads(request.body)
     logger.info("IPN Received:\n%s" % format_data(data))
 
     # Charges are handled synchronously, so no need to do anything with webhook

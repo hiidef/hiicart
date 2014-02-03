@@ -38,7 +38,7 @@ def ipn(request):
     # Authorize sends us info urlencoded as latin1
     # So, if we end up with the unicode char in our processed POST that means
     # "unknown char" (\ufffd), try to transcode from latin1
-    parsed_raw = parse_qs(request.raw_post_data)
+    parsed_raw = parse_qs(request.body)
     for key, value in data.iteritems():
         if u'\ufffd' in value:
             try:
