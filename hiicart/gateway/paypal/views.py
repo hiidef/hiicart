@@ -6,7 +6,7 @@
 import logging
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
+from django.views.decorators.csrf import csrf_exempt
 from hiicart.gateway.base import GatewayError
 from hiicart.gateway.paypal.ipn import PaypalIPN
 from hiicart.utils import format_exceptions, cart_by_uuid, format_data
@@ -24,6 +24,14 @@ def _find_cart(data):
         logger.warn("No invoice # in data, aborting IPN")
         return None
     return cart_by_uuid(invoice[:36])
+
+
+def try_charset(value, charset):
+    decoded = unicode(unquote_plus(value), charset)
+    # Check for invalid chars after decoding
+    if u'\ufffd' in decoded or u'\x1a' in decoded:
+        raise "Invalid encoding"
+    return decoded
 
 
 def _base_paypal_ipn_listener(request, ipn_class):
@@ -55,11 +63,23 @@ def _base_paypal_ipn_listener(request, ipn_class):
     # "unknown char" (\ufffd), try to transcode from cp1252
     parsed_raw = parse_qs(request.raw_post_data)
     for key, value in data.iteritems():
-        if u'\ufffd' in value:
+        # If paypal provided a charset attempt to decode with that
+        if (u'\ufffd' in value or u'\x1a' in value) and 'charset' in data:
             try:
-                data.update({key: unicode(unquote_plus(parsed_raw[key][-1]), 'cp1252')})
-            except:
+                data[key] = value = try_charset(parsed_raw[key][-1], data['charset'])
+            except Exception:
                 pass
+
+        # Otherwise fallback to original behavior
+        if u'\ufffd' in value or u'\x1a' in value:
+            try:
+                data[key] = try_charset(parsed_raw[key][-1], 'cp1252')
+            except:
+                # Fallback to shift-jis if cp1252 fails
+                try:
+                    data[key] = try_charset(parsed_raw[key][-1], 'shift-jis')
+                except:
+                    pass
     txn_type = data.get("txn_type", "")
     status = data.get("payment_status", "unknown")
     if txn_type == "subscr_cancel" or txn_type == "subscr_eot":
@@ -74,15 +94,17 @@ def _base_paypal_ipn_listener(request, ipn_class):
         if hasattr(handler, "payment_pending"):
             handler.payment_pending(data)
         else:
-            logger.info("Unknown IPN type or status. Type: %s\tStatus: %s\nHandler: %r" %
-                 (txn_type, status, handler))
+            logger.info(
+                "Unknown IPN type or status. Type: %s\tStatus: %s\nHandler: %r" % (txn_type, status, handler)
+            )
     else:
-        logger.info("Unknown IPN type or status. Type: %s\tStatus: %s" %
-                 (txn_type, status))
+        logger.info(
+            "Unknown IPN type or status. Type: %s\tStatus: %s" % (txn_type, status)
+        )
     return HttpResponse()
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):

@@ -1,5 +1,5 @@
 from django.conf.urls import patterns
 
 urlpatterns = patterns('',
-    (r'ipn/?$', 'hiicart.gateway.paypal_adaptive.views.ipn'),
+    (r'ipn/?$', 'hiicart.gateway.veritrans_air.views.ipn'),
 )

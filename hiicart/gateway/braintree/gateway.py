@@ -58,7 +58,7 @@ class BraintreeGateway(PaymentGatewayBase):
         """Returns an instance of PaymentForm."""
         return make_form(self.is_recurring)()
 
-    def start_transaction(self, request):
+    def start_transaction(self, request, **kwargs):
         """
         Submits transaction details to Braintree and returns form data.
         If we're processing a one-time sale, submit the transaction for settlement
@@ -78,16 +78,24 @@ class BraintreeGateway(PaymentGatewayBase):
                 }},
                 redirect_url)
         else:
-            tr_data = braintree.Transaction.tr_data_for_sale({
-                "transaction": {
-                    "type": "sale",
-                    "order_id": self.cart.cart_uuid,
-                    "amount": self.cart.total,
-                    "options": {
-                        "submit_for_settlement": True
+            data = {
+                'transaction': {
+                    'type': 'sale',
+                    'order_id': self.cart.cart_uuid,
+                    'amount': self.cart.total,
+                    'options': {
+                        'submit_for_settlement': True
                     }
-                }},
-                redirect_url)
+                }
+            }
+            if self.settings.get('MERCHANT_ACCOUNT_ID'):
+                data['transaction']['merchant_account_id'] = self.settings['MERCHANT_ACCOUNT_ID']
+            if self.settings.get('MERCHANT_NAME'):
+                data['transaction']['descriptor'] = {
+                    'name': '%s*' % self.settings['MERCHANT_NAME'],
+                }
+
+            tr_data = braintree.Transaction.tr_data_for_sale(data, redirect_url)
         return tr_data
 
     def confirm_payment(self, request, gateway_dict=None):

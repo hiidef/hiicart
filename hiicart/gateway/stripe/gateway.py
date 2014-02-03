@@ -37,7 +37,7 @@ class StripeGateway(PaymentGatewayBase):
         """Returns an instance of PaymentForm."""
         return PaymentForm()
 
-    def start_transaction(self, request):
+    def start_transaction(self, request, **kwargs):
         """
         Stripe doesn't need anything special to start a transaction before tokenization.
         Just get the URL for the form action.

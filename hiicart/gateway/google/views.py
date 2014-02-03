@@ -6,8 +6,7 @@
 import logging
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
-from hiicart.gateway.base import GatewayError
+from django.views.decorators.csrf import csrf_exempt
 from hiicart.gateway.google.gateway import GoogleGateway
 from hiicart.gateway.google.ipn import GoogleIPN
 from hiicart.utils import format_exceptions, call_func, cart_by_uuid, format_data
@@ -33,11 +32,11 @@ def _find_cart(data):
             private_data = data[items[0]]
     if not private_data:
         logger.error("Could not find private data in:\n%s" % format_data(data))
-        return None # Not a HiiCart purchase ?
+        return None  # Not a HiiCart purchase ?
     return cart_by_uuid(private_data)
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):

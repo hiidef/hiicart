@@ -52,7 +52,7 @@ class AuthorizeNetGateway(PaymentGatewayBase):
         """Returns an instance of PaymentForm."""
         return PaymentForm()
 
-    def start_transaction(self, request):
+    def start_transaction(self, request, **kwargs):
         self._update_with_cart_settings({'request':request})
         sequence = random.randint(10000, 99999)
         timestamp = int(time.time())

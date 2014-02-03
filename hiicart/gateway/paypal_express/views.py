@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" """
-
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_view_exempt
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponseRedirect
 from hiicart.gateway.paypal_express.gateway import PaypalExpressCheckoutGateway
 from hiicart.gateway.paypal_express.ipn import PaypalExpressCheckoutIPN
 from hiicart.gateway.paypal.views import _base_paypal_ipn_listener
@@ -50,9 +48,8 @@ def finalize(request):
     return HttpResponseRedirect(result.url)
 
 
-@csrf_view_exempt
+@csrf_exempt
 @format_exceptions
 @never_cache
 def ipn(request):
     return _base_paypal_ipn_listener(request, PaypalExpressCheckoutIPN)
-
