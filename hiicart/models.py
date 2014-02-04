@@ -142,7 +142,7 @@ class HiiCartBase(models.Model):
     tax_country = models.CharField("Tax Country", max_length=2, blank=True, null=True)
     tax_region = models.CharField("Tax Region", max_length=127, blank=True, null=True)
     shipping = models.DecimalField("Shipping Cost", max_digits=18, decimal_places=2, blank=True, null=True)
-    shipping_option_name = models.CharField(max_length=50, blank=True, null=True)
+    shipping_option_name = models.CharField(max_length=75, blank=True, null=True)
     # Customer Info
     ship_first_name = models.CharField("First name", max_length=255, default="")
     ship_last_name = models.CharField("Last name", max_length=255, default="")
