@@ -1,11 +1,11 @@
 import braintree
 
-from datetime import datetime
+from django.utils import timezone
 from django import forms
 from django.forms.util import ErrorDict
 
 EXPIRATION_MONTH_CHOICES = [(i, "%02d" % i) for i in range(1, 13)]
-EXPIRATION_YEAR_CHOICES = range(datetime.now().year, datetime.now().year + 10)
+EXPIRATION_YEAR_CHOICES = range(timezone.now().year, timezone.now().year + 10)
 
 class _BasePaymentForm(object):
     """
@@ -85,7 +85,7 @@ def make_form(is_recurring=False):
         prefix+'credit_card__cardholder_name': forms.CharField(),
         prefix+'credit_card__number': forms.CharField(),
         prefix+'credit_card__cvv': forms.CharField(min_length=3, max_length=4),
-        prefix+'credit_card__expiration_month': forms.ChoiceField(choices=EXPIRATION_MONTH_CHOICES, initial=datetime.now().month),
+        prefix+'credit_card__expiration_month': forms.ChoiceField(choices=EXPIRATION_MONTH_CHOICES, initial=timezone.now().month),
         prefix+'credit_card__expiration_year': forms.ChoiceField(choices=EXPIRATION_YEAR_CHOICES),
         prefix+'customer__phone': forms.CharField(max_length=30),
     }

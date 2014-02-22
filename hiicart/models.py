@@ -7,7 +7,7 @@ import django
 import logging
 import uuid
 
-from datetime import datetime
+from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.dispatch import Signal
@@ -599,9 +599,9 @@ class RecurringLineItemBase(LineItemBase):
     def is_expired(self, grace_period=None):
         """Get subscription expiration based on last payment optionally providing a grace period."""
         if grace_period:
-            return datetime.now() > self.get_expiration() + grace_period
+            return timezone.now() > self.get_expiration() + grace_period
         elif self.hiicart_settings["EXPIRATION_GRACE_PERIOD"]:
-            return datetime.now() > self.get_expiration() + self.hiicart_settings["EXPIRATION_GRACE_PERIOD"]
+            return timezone.now() > self.get_expiration() + self.hiicart_settings["EXPIRATION_GRACE_PERIOD"]
 
 
 @HiiCart.register_lineitem_type(recurring=True)
