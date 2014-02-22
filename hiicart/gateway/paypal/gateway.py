@@ -5,7 +5,8 @@ import httplib2
 from cgi import parse_qs
 
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
 from django.contrib.sites.models import Site
 from django.core import urlresolvers
 from django.utils.http import urlencode
@@ -187,7 +188,7 @@ class PaypalGateway(PaymentGatewayBase):
             if item.trial and item.recurring_start:
                 raise GatewayError("PayPal can't have trial and delayed start")
             if item.recurring_start:
-                delay = item.recurring_start - datetime.now()
+                delay = item.recurring_start - timezone.now()
                 delay += timedelta(days=1) # Round up 1 day to PP shows right start
                 if delay.days > 90:
                     raise GatewayError("PayPal doesn't support a delayed start of more than 90 days.")

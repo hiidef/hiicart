@@ -1,10 +1,10 @@
-from datetime import datetime
+from django.utils import timezone
 from django import forms
 from django.forms.util import ErrorDict
 
 
 EXPIRATION_MONTH_CHOICES = [(i, "%02d" % i) for i in range(1, 13)]
-EXPIRATION_YEAR_CHOICES = range(datetime.now().year, datetime.now().year + 10)
+EXPIRATION_YEAR_CHOICES = range(timezone.now().year, timezone.now().year + 10)
 
 FORM_MODEL_TRANSLATION = {
     'billing__first_name': 'bill_first_name',
@@ -44,7 +44,7 @@ class PaymentForm(forms.Form):
     # This keeps them from hitting the server when the form is submitted.
     credit_card__number = forms.CharField(required=False, max_length=16)
     credit_card__cvv = forms.CharField(required=False, min_length=3, max_length=4)
-    credit_card__expiration_month = forms.ChoiceField(required=False, choices=EXPIRATION_MONTH_CHOICES, initial=datetime.now().month)
+    credit_card__expiration_month = forms.ChoiceField(required=False, choices=EXPIRATION_MONTH_CHOICES, initial=timezone.now().month)
     credit_card__expiration_year = forms.ChoiceField(required=False, choices=EXPIRATION_YEAR_CHOICES)
 
     stripe_publishable_key = forms.CharField(max_length=32)
