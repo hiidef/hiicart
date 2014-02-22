@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 from django import forms
 from django.forms.util import ErrorDict
 
@@ -23,7 +23,7 @@ PAYMENT_FIELDS = {'credit_card__number': 'x_card_num',
                   'shipping__country_code_alpha2': 'x_ship_to_country'}
 
 EXPIRATION_MONTH_CHOICES = [(i, "%02d" % i) for i in range(1, 13)]
-EXPIRATION_YEAR_CHOICES = range(datetime.now().year, datetime.now().year + 10)
+EXPIRATION_YEAR_CHOICES = range(timezone.now().year, timezone.now().year + 10)
 
 
 class PaymentForm(forms.Form):

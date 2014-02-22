@@ -1,9 +1,9 @@
-from datetime import datetime
+from django.utils import timezone
 from django import forms
 from django.forms.util import ErrorDict
 
 EXPIRATION_MONTH_CHOICES = [(i, "%02d" % i) for i in range(1, 13)]
-EXPIRATION_YEAR_CHOICES = range(datetime.now().year, datetime.now().year + 10)
+EXPIRATION_YEAR_CHOICES = range(timezone.now().year, timezone.now().year + 10)
 
 FORM_MODEL_TRANSLATION = {
     'billing__first_name': 'bill_first_name',

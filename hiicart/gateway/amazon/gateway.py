@@ -1,7 +1,7 @@
 "Amazon Payments Gateway"
 
 import urllib
-from datetime import datetime
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from hiicart.gateway.amazon import fps, ipn
 from hiicart.gateway.amazon.settings import SETTINGS as default_settings
@@ -47,7 +47,7 @@ class AmazonGateway(PaymentGatewayBase):
             values["pipelineName"] = "Recurring"
             values["recurringPeriod"] = "%s %s" % (
                     recurring.duration, recurring.duration_unit)
-            if recurring.recurring_start and recurring.recurring_start > datetime.now():
+            if recurring.recurring_start and recurring.recurring_start > timezone.now():
                 values["validityStart"] = recurring.recurring_start.strftime('%s')
         # Optional Fields
         if self.settings["CBUI_WEBSITE_DESC"]:

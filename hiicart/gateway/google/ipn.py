@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 from decimal import Decimal
 from hiicart.gateway.base import IPNBase
 from hiicart.gateway.google.settings import SETTINGS as default_settings
@@ -143,7 +143,7 @@ class GoogleIPN(IPNBase):
         if payment is None:
             return # Not a HiiCart purchase (?)
         if old != "CANCELLED" and new == "CANCELLED":
-            self.cart.notes.create(text="Purchase cancelled via IPN: %s" % datetime.now())
+            self.cart.notes.create(text="Purchase cancelled via IPN: %s" % timezone.now())
             for r in self.cart.recurring_lineitems:
                 r.is_active = False
                 r.save()

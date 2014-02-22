@@ -8,7 +8,7 @@ import httplib2
 import urllib
 import urllib2
 
-from datetime import datetime
+from django.utils import timezone
 from decimal import Decimal
 from django.core.urlresolvers import reverse
 from urllib import unquote
@@ -57,7 +57,7 @@ def create_recurring_profile(token, payer_id, cart, settings):
     for item in cart.recurring_lineitems:
         params = {"METHOD": "CreateRecurringPaymentsProfile",
                   "TOKEN": token,
-                  "PROFILESTARTDATE": item.recurring_start or datetime.now(),
+                  "PROFILESTARTDATE": item.recurring_start or timezone.now(),
                   "PROFILEREFERENCE": cart._cart_uuid,
                   "DESC": item.description,
                   "BILLINGPERIOD": "Month", #item.duration_unit,
