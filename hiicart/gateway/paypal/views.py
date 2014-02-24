@@ -55,13 +55,13 @@ def _base_paypal_ipn_listener(request, ipn_class):
         logger.error("paypal gateway: Unknown transaction: %s" % data)
         return HttpResponse()
     handler = ipn_class(cart)
-    if not handler.confirm_ipn_data(request.raw_post_data):
+    if not handler.confirm_ipn_data(request.body):
         logger.error("Paypal IPN Confirmation Failed.")
         raise GatewayError("Paypal IPN Confirmation Failed.")
     # Paypal defaults to cp1252, because it hates you
     # So, if we end up with the unicode char that means
     # "unknown char" (\ufffd), try to transcode from cp1252
-    parsed_raw = parse_qs(request.raw_post_data)
+    parsed_raw = parse_qs(request.body)
     for key, value in data.iteritems():
         # If paypal provided a charset attempt to decode with that
         if (u'\ufffd' in value or u'\x1a' in value) and 'charset' in data:

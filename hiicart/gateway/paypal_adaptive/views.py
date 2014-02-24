@@ -39,7 +39,7 @@ def ipn(request):
     # Verify the data with Paypal
     cart = _find_cart(data)
     ipn = PaypalAPIPN(cart)
-    if not ipn.confirm_ipn_data(request.raw_post_data):
+    if not ipn.confirm_ipn_data(request.body):
         logger.error("Paypal IPN Confirmation Failed.")
         raise GatewayError("Paypal IPN Confirmation Failed.")
     if "transaction_type" in data:  # Parallel/Chained Payment initiation IPN.
