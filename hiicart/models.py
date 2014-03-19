@@ -167,6 +167,7 @@ class HiiCartBase(models.Model):
     thankyou = models.CharField("Thank you message.", max_length=255, blank=True, null=True, default=None)
     fulfilled = models.BooleanField(default=False)
     custom_id = models.CharField(max_length=255, blank=True, null=True, default=None)
+    send_notifications = models.BooleanField(default=True)
     created = models.DateTimeField("Created", auto_now_add=True)
     last_updated = models.DateTimeField("Last Updated", auto_now=True)
 
