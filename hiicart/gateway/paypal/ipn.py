@@ -34,6 +34,11 @@ def update_billing_info(cart, data):
     if data.get("address_name"):
         cart.ship_first_name = data.get("address_name")
         cart.ship_last_name = ""
+    # Enforce 80 char max_length on street fields
+    for field in ['bill_street1','ship_street1','bill_street2','ship_street2']:
+        field_value = getattr(cart, field, None)
+        if field_value:
+            setattr(cart, field, field_value[:80])
 
 class PaypalIPN(IPNBase):
     """Paypal IPN Handler"""

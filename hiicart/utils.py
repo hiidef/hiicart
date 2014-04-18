@@ -5,9 +5,14 @@
 
 import logging
 import traceback
+import sys
 from pprint import pformat
 from django.http import HttpResponse, QueryDict
 from hiicart.models import CART_TYPES
+try:
+    import newrelic.agent
+except ImportError, e:
+    pass
 
 logger = logging.getLogger("hiicart")
 
@@ -34,6 +39,8 @@ def format_exceptions(method):
             logger.error("Exception encountered: %s" % fmt)
             response = HttpResponse(fmt)
             response.status_code=500  # Definitely _not_ a 200 resposne
+            if 'newrelic.agent' in sys.modules:
+                newrelic.agent.record_exception(*sys.exc_info())
             return response
     return wrapper
 
