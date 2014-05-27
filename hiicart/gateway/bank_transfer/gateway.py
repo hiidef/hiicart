@@ -6,6 +6,11 @@ class BankTransferGateway(PaymentGatewayBase):
     def __init__(self, cart):
         super(BankTransferGateway, self).__init__('bank_transfer', cart)
 
+    @property
+    def form(self):
+        """Returns an instance of PaymentForm."""
+        return PaymentForm()
+
     def confirm_payment(self, request):
         """
         Records billing and shipping info for Bank Transfers
