@@ -49,7 +49,6 @@ class PaymentForm(forms.Form):
         return forms.forms.BoundField(self, field, name)
 
     def set_transaction(self, data):
-        import ipdb; ipdb.set_trace()
         self._submit_url = data.pop('submit_url')
         for k, v in data.iteritems():
             if self.is_bound:
