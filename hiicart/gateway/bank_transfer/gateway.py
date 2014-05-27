@@ -1,4 +1,5 @@
 from hiicart.gateway.base import PaymentGatewayBase, TransactionResult, SubmitResult, GatewayError, CancelResult
+from hiicart.gateway.bank_transfer  .forms import PaymentForm, FORM_MODEL_TRANSLATION
 
 class BankTransferGateway(PaymentGatewayBase):
     """Bank Transfer processor"""
