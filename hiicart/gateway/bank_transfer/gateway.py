@@ -70,9 +70,7 @@ class BankTransferGateway(PaymentGatewayBase):
     def prepare_cart(self):
         """Update cart"""
 
-        payment = self.cart.payments.create(amount=self.cart.total, gateway=self.cart.gateway, state='PENDING', transaction_id=None)
-        payment.state = "PAID" # Ensure proper state transitions
-        payment.save()
+        self.cart.payments.create(amount=self.cart.total, gateway=self.cart.gateway, state='PAID', transaction_id=None)
 
         self.cart._cart_state = "COMPLETED"
         self.cart.send_notifications = False
