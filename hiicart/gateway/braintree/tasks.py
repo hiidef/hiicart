@@ -11,6 +11,8 @@ log = logging.getLogger('hiicart.gateway.braintree.tasks')
 @task
 def update_payment_status(hiicart_id, transaction_id, tries=0, cart_class=HiiCart):
     """Check the payment status of a Braintree transaction."""
+    if transaction_id is None:
+        return
     hiicart = cart_class.objects.get(pk=hiicart_id)
     handler = BraintreeIPN(hiicart)
     done = handler.update_order_status(transaction_id)
