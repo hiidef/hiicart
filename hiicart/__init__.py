@@ -1,6 +1,5 @@
 __version__ = '0.3.37'
 
-
 def validate_gateway(gateway):
     """Test that a gateway is correctly set up.
     Returns True if successful, or an error message."""
