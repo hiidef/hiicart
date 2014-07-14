@@ -73,6 +73,7 @@ class CashOnDeliveryGateway(PaymentGatewayBase):
         self.cart.payments.create(amount=self.cart.total, gateway=self.cart.gateway.upper(), state='PENDING', transaction_id=None)
 
         self.cart._cart_state = "COMPLETED"
+        self.cart.send_notifications = False
         self.cart.save()
 
     def _is_valid(self):
