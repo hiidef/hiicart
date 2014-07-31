@@ -348,6 +348,7 @@ class HiiCartBase(models.Model):
         from hiicart.gateway.veritrans_air.gateway import VeritransAirGateway
         from hiicart.gateway.bank_transfer.gateway import BankTransferGateway
         from hiicart.gateway.braintree.gateway import BraintreeGateway
+        from hiicart.gateway.cash_on_delivery.gateway import CashOnDeliveryGateway
         from hiicart.gateway.authorizenet.gateway import AuthorizeNetGateway
         from hiicart.gateway.stripe.gateway import StripeGateway
 
@@ -362,6 +363,7 @@ class HiiCartBase(models.Model):
             'paypal_express': PaypalExpressCheckoutGateway,
             'veritrans_air': VeritransAirGateway,
             'bank_transfer': BankTransferGateway,
+            'cash_on_delivery': CashOnDeliveryGateway,
             'braintree': BraintreeGateway,
             'authorizenet': AuthorizeNetGateway,
             'stripe': StripeGateway
