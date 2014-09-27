@@ -102,6 +102,7 @@ class BraintreeIPN(IPNBase):
         if payment:
             self.cart.update_state()
             self.cart.save()
+        return payment
 
 
     def update_order_status(self, transaction_id):
