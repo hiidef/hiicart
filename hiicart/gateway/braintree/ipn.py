@@ -61,7 +61,7 @@ class BraintreeIPN(IPNBase):
                 payment[0].state = state
                 payment[0].created = transaction.created_at
                 payment[0].save()
-                return payment[0]
+            return payment[0]
         else:
             payment = self._create_payment(transaction.amount,
                                            transaction.id, state)
