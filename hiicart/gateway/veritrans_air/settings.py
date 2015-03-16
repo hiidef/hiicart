@@ -1,6 +1,6 @@
 """Settings for Veritrans Air gateway
 
-g**Required settings:**
+**Required settings:**
  * *MERCHANT_ID*
  * *MERCHANTHASH*
  * *SESSION_ID*

@@ -77,6 +77,9 @@ class VeritransAirGateway(PaymentGatewayBase):
         if self.settings.get('FINISH_PAYMENT_ACCESS_URL'):
             params['FINISH_PAYMENT_ACCESS_URL'] = self.settings['FINISH_PAYMENT_ACCESS_URL']
 
+        if self.settings.get('PUSH_URL'):
+            params['PUSH_URL'] = self.settings['PUSH_URL']
+
         if self.settings.get('CARD_CAPTURE_FLAG'):
             params['CARD_CAPTURE_FLAG'] = self.settings['CARD_CAPTURE_FLAG']
 
