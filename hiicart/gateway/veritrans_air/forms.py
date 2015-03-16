@@ -35,7 +35,7 @@ class PaymentForm(forms.Form):
     billing__region = forms.CharField(max_length=50)
     billing__postal_code = forms.CharField(max_length=30)
     billing__country_code_alpha2 = forms.CharField(max_length=2)
-    customer__phone = forms.CharField(max_length=30, required=False)
+    customer__phone = forms.CharField(max_length=30)
     shipping__first_name = forms.CharField(max_length=255)
     shipping__last_name = forms.CharField(max_length=255)
     shipping__street_address = forms.CharField(max_length=80)

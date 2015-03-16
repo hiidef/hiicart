@@ -103,6 +103,8 @@ class VeritransAirGateway(PaymentGatewayBase):
             params['SHIPPING_AMOUNT'] = self.cart.shipping.quantize(Decimal('1'))
 
         params["MAILADDRESS"] = self.cart.bill_email
+        if self.cart.bill_phone:
+            params["TELEPHONE_NO"] = self.cart.bill_phone
 
         # params['NAME1'] = self.cart.bill_first_name
         # params['NAME2'] = self.cart.bill_last_name
