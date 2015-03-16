@@ -37,8 +37,8 @@ class VeritransAirIPN(IPNBase):
             cart.notes.get_or_create(
                 content_type=content_type,
                 object_id=cart.pk,
-                text__startswith='Credit Card:',
-                defaults={'text': 'Credit Card:false'},
+                text__startswith='CVS Payment:',
+                defaults={'text': 'CVS Payment:true'},
             )[0]
         else:
             payment.state = "PAID" # Ensure proper state transitions
