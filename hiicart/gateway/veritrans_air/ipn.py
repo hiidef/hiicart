@@ -41,7 +41,7 @@ class VeritransAirIPN(IPNBase):
                 defaults={'text': 'Credit Card:false'},
             )[0]
         else:
-            payment.state = "PAID"
+            payment.state = "PAID" # Ensure proper state transitions
             payment.save()
 
         self.cart.update_state()
