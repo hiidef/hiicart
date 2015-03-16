@@ -40,11 +40,12 @@ class VeritransAirIPN(IPNBase):
                 text__startswith='CVS Payment:',
                 defaults={'text': 'CVS Payment:true'},
             )[0]
+            cart._cart_state = 'COMPLETED'
         else:
             payment.state = "PAID" # Ensure proper state transitions
             payment.save()
+            self.cart.update_state()
 
-        self.cart.update_state()
         self.cart.save()
 
     def payment_pending(self, data):
