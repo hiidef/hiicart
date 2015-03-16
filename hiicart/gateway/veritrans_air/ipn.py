@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from hiicart.gateway.base import IPNBase
 from hiicart.gateway.veritrans_air.settings import SETTINGS as default_settings
 
@@ -24,15 +25,27 @@ class VeritransAirIPN(IPNBase):
         # create a PENDING payment and save as PAID to ensure signaling
         if len(existing) == 1 and existing[0].state == "PENDING":
             payment = existing[0]
-            payment.state = "PAID"
-            payment.save()
         else:
             payment = self._create_payment(self.cart.total, transaction_id, "PENDING")
-            payment.state = "PAID" # Ensure proper state transitions
+        # If credit card payment, mark payment as PAID.
+        # For Convenience store payments: conv. they will be marked PAID at
+        # time of payment. Since COMPLETED cart with PENDING payment isn't
+        # enough to distinguish a conv. store payment, make a Note.
+        if data['vResultCode'].startswith('D001'):
+            cart = self.cart
+            content_type = ContentType.objects.get_for_model(cart)
+            cart.notes.get_or_create(
+                content_type=content_type,
+                object_id=cart.pk,
+                text__startswith='Credit Card:',
+                defaults={'text': 'Credit Card:false'},
+            )[0]
+        else:
+            payment.state = "PAID"
             payment.save()
 
         self.cart.update_state()
-        self.cart.save()        
+        self.cart.save()
 
     def payment_pending(self, data):
         """Acknowledge that a payment on this transaction is pending by creating
