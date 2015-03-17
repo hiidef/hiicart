@@ -11,7 +11,11 @@ class VeritransAirIPN(IPNBase):
     def accept_payment(self, data):
         """Accept a successful Veritrans payment"""
         transaction_id = data["orderId"]
-        self.log.debug("Veritrans Air IPN for order #%s received" % transaction_id)
+        if data.get('csvType'):
+            message = "Marking CSV order %s PAID" % transaction_id
+        else:
+            message = "Veritrans Air IPN for order #%s received" % transaction_id
+        self.log.debug(message)
         existing = self.cart.payment_class.objects.filter(transaction_id=transaction_id)
         if len(existing) and not all([p.state == "PENDING" for p in existing]):
             self.log.warn("IPN #%s, but found existing non-PENDING payments, already processed", transaction_id)
@@ -28,10 +32,10 @@ class VeritransAirIPN(IPNBase):
         else:
             payment = self._create_payment(self.cart.total, transaction_id, "PENDING")
         # If credit card payment, mark payment as PAID.
-        # For Convenience store payments: conv. they will be marked PAID at
+        # For Convenience store payments: they will be marked PAID at
         # time of payment. Since COMPLETED cart with PENDING payment isn't
         # enough to distinguish a conv. store payment, make a Note.
-        if data['vResultCode'].startswith('D001'):
+        if 'cvsType' not in data and data['vResultCode'].startswith('D001'):
             cart = self.cart
             content_type = ContentType.objects.get_for_model(cart)
             cart.notes.get_or_create(
@@ -47,6 +51,15 @@ class VeritransAirIPN(IPNBase):
             self.cart.update_state()
 
         self.cart.save()
+        if 'cvsType' in data:
+            # trigger the cart state change event for any receivers looking for
+            # Payments being marked PAID
+            self.cart.cart_state_changed.send(
+                sender=self.__class__.__name__,
+                cart=self.cart,
+                old_state=self.cart._old_state,
+                new_state=self.cart.state
+            )
 
     def payment_pending(self, data):
         """Acknowledge that a payment on this transaction is pending by creating
@@ -73,7 +86,6 @@ class VeritransAirIPN(IPNBase):
     def confirm_ipn_data(self, data):
         """Confirm IPN data """
 
-        check = True
         required = ['orderId','mStatus','mErrMsg','vResultCode','merchantEncryptionKey']
         for field in required:
             if field not in data:
