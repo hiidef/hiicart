@@ -61,7 +61,7 @@ class BraintreeIPN(IPNBase):
                 payment[0].state = state
                 payment[0].created = transaction.created_at
                 payment[0].save()
-                return payment[0]
+            return payment[0]
         else:
             payment = self._create_payment(transaction.amount,
                                            transaction.id, state)
@@ -102,6 +102,7 @@ class BraintreeIPN(IPNBase):
         if payment:
             self.cart.update_state()
             self.cart.save()
+        return payment
 
 
     def update_order_status(self, transaction_id):

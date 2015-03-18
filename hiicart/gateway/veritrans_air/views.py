@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import re
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
@@ -35,22 +36,44 @@ def ipn(request):
         return HttpResponse("ERR")
 
     data = request.POST.copy()
-    logger.info("IPN Received:\n%s" % format_data(data))
+
+    # invoice may have a suffix due to retries
+    retry = False
+    for key in data.keys():
+        # orderId is in both CSV and CC IPNs
+        if key.startswith('orderId'):
+            # has suffix / is a retry - fix keys
+            if re.match('\d', key[-1]):
+                data = {re.sub('\d', '', k): v for k, v in data.iteritems()}
+                retry = True
+            continue
     cart = _find_cart(data)
+    if retry:
+        logger.info(
+            "Retry %s with IPN: \n%s" % (re.sub('[^\d]', '', key), format_data(data))
+        )
+    else:
+        logger.info("IPN Received:\n%s" % format_data(data))
     if not cart:
         logger.error("veritrans air gateway: Unknown transaction: %s" % data)
         return HttpResponse("ERR")
+
     handler = VeritransAirIPN(cart)
-    # Verify the data with Veritrans
-    if not handler.confirm_ipn_data(data):
-        logger.error("Veritrans Air IPN Confirmation Failed.")
-        return HttpResponse("ERR")
-
-    status = data["mStatus"]
-
-    if status == 'success':
+    if data.get('cvsType'):
+        if not handler.confirm_cvs_ipn_data(data):
+            logger.error("Veritrans Air CVS IPN Confirmation Failed.")
         handler.accept_payment(data)
-    elif status == 'pending':
-        handler.payment_pending(data)
+    else:
+        # Verify the data with Veritrans
+        if not handler.confirm_ipn_data(data):
+            logger.error("Veritrans Air IPN Confirmation Failed.")
+            return HttpResponse("ERR")
+
+        status = data["mStatus"]
+
+        if status == 'success':
+            handler.accept_payment(data)
+        elif status == 'pending':
+            handler.payment_pending(data)
 
     return HttpResponse("OK")
