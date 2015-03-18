@@ -11,7 +11,7 @@ class VeritransAirIPN(IPNBase):
     def accept_payment(self, data):
         """Accept a successful Veritrans payment"""
         transaction_id = data["orderId"]
-        if data.get('csvType'):
+        if data.get('cvsType'):
             message = "Marking CSV order %s PAID" % transaction_id
         else:
             message = "Veritrans Air IPN for order #%s received" % transaction_id
