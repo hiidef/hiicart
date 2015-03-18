@@ -95,3 +95,11 @@ class VeritransAirIPN(IPNBase):
         merchant_encryption_key = gateway.get_merchant_encryption_key().replace("+",' ')
 
         return data['merchantEncryptionKey'] == merchant_encryption_key
+
+    def confirm_cvs_ipn_data(self, data):
+        """Make sure all the right fields are in the data.  There's no merchant key to check."""
+        required = ['orderId','numberOfNotify','cvsType','receiptDate','rcvAmount', 'pushTime', 'pushId', 'receiptNo', 'dummy']
+        for field in required:
+            if field not in data:
+                return False
+        return True

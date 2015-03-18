@@ -60,6 +60,8 @@ def ipn(request):
 
     handler = VeritransAirIPN(cart)
     if data.get('cvsType'):
+        if not confirm_cvs_ipn_data(data):
+            logger.error("Veritrans Air CVS IPN Confirmation Failed.")
         handler.accept_payment(data)
     else:
         # Verify the data with Veritrans
