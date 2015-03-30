@@ -11,10 +11,10 @@ from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.dispatch import Signal
-from django.contrib.auth.models import User
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.conf import settings
 from django.utils.safestring import mark_safe
 from hiicart.settings import SETTINGS as hiicart_settings
 
@@ -456,9 +456,9 @@ else:
 
 class HiiCart(HiiCartBase):
     if _user_delete_behavior is not None:
-        user = models.ForeignKey(User, on_delete=_user_delete_behavior, null=True, blank=True)
+        user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=_user_delete_behavior, null=True, blank=True)
     else:
-        user = models.ForeignKey(User, null=True, blank=True)
+        user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
 
 
 class LineItemBase(models.Model):

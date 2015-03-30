@@ -4,7 +4,10 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from hiicart.models import HiiCart, LineItem, RecurringLineItem
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 class HiiCartTestCase(unittest.TestCase):
     """Base class for HiiCart tests"""
@@ -28,4 +31,3 @@ class HiiCartTestCase(unittest.TestCase):
                                                 quantity=1, sku="42",
                                                 duration=12, duration_unit="MONTH",
                                                 recurring_price=Decimal("20.00"))
-
