@@ -1,7 +1,7 @@
 import urllib
 import httplib2
 import hashlib
-import random
+import re
 from cgi import parse_qs
 
 from decimal import Decimal
@@ -98,6 +98,14 @@ class VeritransAirGateway(PaymentGatewayBase):
         
         if self.cart.shipping:
             params['SHIPPING_AMOUNT'] = self.cart.shipping.quantize(Decimal('1'))
+
+        params["MAILADDRESS"] = self.cart.bill_email
+        # phone needs to be 10 digits, no hyphens.  If it fails these checks,
+        # they'll input it in veritrans.
+        if self.cart.bill_phone:
+            phone = self.cart.bill_phone.replace('-', '')
+            if len(phone) == 10 and re.match('^\d+$', phone):
+                params["TELEPHONE_NO"] = phone
 
         # params['NAME1'] = self.cart.bill_first_name
         # params['NAME2'] = self.cart.bill_last_name
