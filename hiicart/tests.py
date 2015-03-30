@@ -3,9 +3,12 @@ import unittest
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 from hiicart.models import HiiCart, LineItem, RecurringLineItem
+
+User = get_user_model()
+
 
 class HiiCartTestCase(unittest.TestCase):
     """Basic tests to ensure HiiCart is working."""
@@ -228,4 +231,3 @@ class HiiCartTestCase(unittest.TestCase):
 ### PayPal Tests
 
 ### Amazon Payments Tests
-
