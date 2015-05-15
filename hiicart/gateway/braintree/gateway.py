@@ -311,7 +311,7 @@ class BraintreeGateway(PaymentGatewayBase):
         status = None
         verification = getattr(result, 'credit_card_verification', None)
         if verification:
-            status = getattr(obj, 'status', None)
+            status = getattr(verification, 'status', None)
             if status == 'processor_declined':
                 errors = {'non_field_errors': getattr(obj, 'processor_response_text', 'There was an error communicating with the gateway')}
             elif status == 'gateway_rejected':
