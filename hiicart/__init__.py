@@ -1,4 +1,4 @@
-__version__ = '0.3.42'
+__version__ = '0.3.44'
 
 
 def validate_gateway(gateway):
