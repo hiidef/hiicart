@@ -76,9 +76,15 @@ class StripeGateway(PaymentGatewayBase):
 
             token = form.cleaned_data['stripe_token']
             try:
+                # TODO: there's not anything to actually do, I just wanted to
+                # acknowledge that this is terrible
+                if self.settings['CURRENCY_CODE'] == 'JPY':
+                    amount = int(self.cart.total)
+                else:
+                    amount = int(self.cart.total * 100)  # amount in cents
                 charge = stripe_api.Charge.create(
                     api_key=self.settings['PRIVATE_KEY'],
-                    amount=int(self.cart.total * 100), # amount in cents
+                    amount=amount,
                     currency=self.settings['CURRENCY_CODE'],
                     card=token,
                     description="Order #%s (%s)" % (self.cart.id, self.cart.bill_email)
@@ -107,4 +113,3 @@ class StripeGateway(PaymentGatewayBase):
                 success=False,
                 status='failed',
                 errors=form._errors)
-
