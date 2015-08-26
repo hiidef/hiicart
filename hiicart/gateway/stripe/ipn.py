@@ -30,7 +30,10 @@ class StripeIPN(IPNBase):
                 payment[0].save()
                 return payment[0]
         else:
-            amount = float(charge.amount) /100.0
+            if self.settings['CURRENCY_CODE'] == 'JPY':
+                amount = float(charge.amount)
+            else:
+                amount = float(charge.amount) / 100.0
             amount = Decimal(str(amount))
             payment = self._create_payment(amount, charge.id, state)
             payment.save()
@@ -42,4 +45,3 @@ class StripeIPN(IPNBase):
         if payment:
             self.cart.update_state()
             self.cart.save()
-
