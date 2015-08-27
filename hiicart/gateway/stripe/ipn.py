@@ -34,7 +34,7 @@ class StripeIPN(IPNBase):
                 amount = charge.amount
             else:
                 amount = float(charge.amount) / 100.0
-            amount = Decimal(str(amount))
+                amount = Decimal(str(amount))
             payment = self._create_payment(amount, charge.id, state)
             payment.save()
             return payment
