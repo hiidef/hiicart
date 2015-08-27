@@ -78,7 +78,7 @@ class StripeGateway(PaymentGatewayBase):
             try:
                 # TODO: there's not anything to actually do, I just wanted to
                 # acknowledge that this is terrible
-                if self.settings['CURRENCY_CODE'] == 'JPY':
+                if request.white_label.currency == 'JPY':
                     amount = int(self.cart.total)
                 else:
                     amount = int(self.cart.total * 100)  # amount in cents
