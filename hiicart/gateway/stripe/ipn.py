@@ -31,7 +31,7 @@ class StripeIPN(IPNBase):
                 return payment[0]
         else:
             if self.settings['CURRENCY_CODE'] == 'JPY':
-                amount = float(charge.amount)
+                amount = charge.amount
             else:
                 amount = float(charge.amount) / 100.0
             amount = Decimal(str(amount))
