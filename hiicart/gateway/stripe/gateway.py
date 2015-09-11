@@ -81,7 +81,7 @@ class StripeGateway(PaymentGatewayBase):
             currency=self.settings['CURRENCY_CODE'],
             source=token,
             description="Order #%s (%s)" % (self.cart.id, self.cart.bill_email),
-            **kwargs,
+            **kwargs
         )
         return charge
 
