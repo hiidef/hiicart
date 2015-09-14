@@ -133,7 +133,8 @@ class StripeGateway(PaymentGatewayBase):
                     description="Customer for Order %s" % self.cart.pk
                 )
                 for cd in charge_data:
-                    token = stripe.Token.create(
+                    token = stripe_api.Token.create(
+                        api_key=platform_key,
                         customer=customer.id,
                         stripe_account=cd['stripe_account']  # store's account
                     )
