@@ -124,14 +124,14 @@ class StripeGateway(PaymentGatewayBase):
         form = PaymentForm(request.POST)
         if form.is_valid():
             self.save_payment_cart(form)
-            token_id = form.cleaned_data['stripe_token']
-            customer = stripe_api.Customer.create(
-                api_key=platform_key,
-                source=token_id,
-                description="Customer for Order %s" % self.cart.pk
-            )
             charge_keys = []
             try:
+                token_id = form.cleaned_data['stripe_token']
+                customer = stripe_api.Customer.create(
+                    api_key=platform_key,
+                    source=token_id,
+                    description="Customer for Order %s" % self.cart.pk
+                )
                 for cd in charge_data:
                     token = stripe.Token.create(
                         customer=customer.id,
