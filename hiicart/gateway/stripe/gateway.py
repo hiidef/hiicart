@@ -142,7 +142,7 @@ class StripeGateway(PaymentGatewayBase):
                         'application_fee': cd['application_fee'],
                         'stripe_account': cd['stripe_account'],
                     }
-                    charge = self.charge_amount(charge_data['amount'], platform_key, token.id, **kwargs)
+                    charge = self.charge_amount(cd['amount'], platform_key, token.id, **kwargs)
                     charge_keys.append([charge, cd['stripe_account']])
             except stripe_api.StripeError as e:
                 for charge, key in charge_keys:
