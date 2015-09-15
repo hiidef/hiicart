@@ -157,7 +157,7 @@ class StripeGateway(PaymentGatewayBase):
             self.cart.save()
 
             handler = StripeIPN(self.cart)
-            for charge in charges:
+            for charge, _ in charge_keys:
                 handler.accept_payment(charge)
 
             # We have multiple charges, but whatever, I don't think it matters
