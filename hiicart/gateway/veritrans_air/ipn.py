@@ -92,9 +92,9 @@ class VeritransAirIPN(IPNBase):
                 return False
 
         gateway = self.cart.get_gateway()
-        merchant_encryption_key = gateway.get_merchant_encryption_key().replace("+",' ')
+        merchant_encryption_key = gateway.get_merchant_encryption_key()
 
-        return data['merchantEncryptionKey'] == merchant_encryption_key
+        return data['merchantEncryptionKey'] in [merchant_encryption_key, merchant_encryption_key.replace('+', ' ')]
 
     def confirm_cvs_ipn_data(self, data):
         """Make sure all the right fields are in the data.  There's no merchant key to check."""

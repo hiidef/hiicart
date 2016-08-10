@@ -311,11 +311,11 @@ class BraintreeGateway(PaymentGatewayBase):
         status = None
         verification = getattr(result, 'credit_card_verification', None)
         if verification:
-            status = getattr(obj, 'status', None)
+            status = getattr(verification, 'status', None)
             if status == 'processor_declined':
-                errors = {'non_field_errors': getattr(obj, 'processor_response_text', 'There was an error communicating with the gateway')}
+                errors = {'non_field_errors': getattr(verification, 'processor_response_text', 'There was an error communicating with the gateway')}
             elif status == 'gateway_rejected':
-                errors = {'non_field_errors': getattr(obj, 'gateway_rejection_reason', 'The card was declined')}
+                errors = {'non_field_errors': getattr(verification, 'gateway_rejection_reason', 'The card was declined')}
         else:
             message = getattr(result, 'message', None)
             errors = {'non_field_errors': message}

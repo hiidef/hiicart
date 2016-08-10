@@ -3,7 +3,6 @@ import base
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from django.conf import settings
-from django.contrib.auth.models import User
 
 from hiicart.models import HiiCart, LineItem, RecurringLineItem
 from hiicart import settings as hsettings
@@ -85,7 +84,7 @@ class CompTestCase(base.HiiCartTestCase):
         self.assertEqual(self.cart.payments.count(), 1)
         self.cart.charge_recurring(grace_period=timedelta(hours=1))
         self.assertEqual(self.cart.payments.count(), 2)
-        # With grace period 
+        # With grace period
         self.cart = cart_base.clone()
         self.test_submit_recurring()
         self.cart.adjust_expiration(datetime.now()-timedelta(days=1))
