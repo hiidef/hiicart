@@ -81,7 +81,7 @@ class StripeGateway(PaymentGatewayBase):
             currency=self.settings['CURRENCY_CODE'],
             source=token,
             description="Order #%s (%s)" % (self.cart.id, self.cart.bill_email),
-            **kwargs,
+            **kwargs
         )
         return charge
 
@@ -124,16 +124,17 @@ class StripeGateway(PaymentGatewayBase):
         form = PaymentForm(request.POST)
         if form.is_valid():
             self.save_payment_cart(form)
-            token_id = form.cleaned_data['stripe_token']
-            customer = stripe_api.Customer.create(
-                api_key=platform_key,
-                source=token_id,
-                description="Customer for Order %s" % self.cart.pk
-            )
             charge_keys = []
             try:
+                token_id = form.cleaned_data['stripe_token']
+                customer = stripe_api.Customer.create(
+                    api_key=platform_key,
+                    source=token_id,
+                    description="Customer for Order %s" % self.cart.pk
+                )
                 for cd in charge_data:
-                    token = stripe.Token.create(
+                    token = stripe_api.Token.create(
+                        api_key=platform_key,
                         customer=customer.id,
                         stripe_account=cd['stripe_account']  # store's account
                     )
@@ -141,7 +142,7 @@ class StripeGateway(PaymentGatewayBase):
                         'application_fee': cd['application_fee'],
                         'stripe_account': cd['stripe_account'],
                     }
-                    charge = self.charge_amount(charge_data['amount'], platform_key, token.id, **kwargs)
+                    charge = self.charge_amount(cd['amount'], platform_key, token.id, **kwargs)
                     charge_keys.append([charge, cd['stripe_account']])
             except stripe_api.StripeError as e:
                 for charge, key in charge_keys:
@@ -156,7 +157,7 @@ class StripeGateway(PaymentGatewayBase):
             self.cart.save()
 
             handler = StripeIPN(self.cart)
-            for charge in charges:
+            for charge, _ in charge_keys:
                 handler.accept_payment(charge)
 
             # We have multiple charges, but whatever, I don't think it matters
