@@ -74,7 +74,8 @@ class BraintreeGateway(PaymentGatewayBase):
                         'options': {
                             'verify_card': True
                         }
-                    }
+                    },
+                    'device_data': kwargs.get('device_data'),
                 }},
                 redirect_url)
         else:
