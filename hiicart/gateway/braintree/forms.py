@@ -22,15 +22,11 @@ class _BasePaymentForm(object):
         tr_data = kwargs.pop('tr_data', '')
         super(_BasePaymentForm, self).__init__(*args, **kwargs)
 
-    def set_transaction(self, tr_data, device_data=None):
+    def set_transaction(self, tr_data):
         if self.is_bound:
             self.data['tr_data'] = tr_data
-            if device_data:
-                self.data['device_data'] = device_data
         else:
             self.fields['tr_data'].initial = tr_data
-            if device_data:
-                self.fields['device_data'].initial = device_data
 
     def hidden_fields(self):
         """
