@@ -32,7 +32,7 @@ class _BasePaymentForm(object):
         """
         Get hidden fields required for this form.
         """
-        return [self['tr_data']]
+        return [self['tr_data'], self['device_data']]
 
     @property
     def action(self):
@@ -82,6 +82,7 @@ def make_form(is_recurring=False):
     prefix = 'customer__' if is_recurring else 'transaction__'
     fields = {
         'tr_data': forms.CharField(widget=forms.HiddenInput),
+        'device_data': forms.CharField(widget=forms.HiddenInput),
         prefix+'credit_card__cardholder_name': forms.CharField(),
         prefix+'credit_card__number': forms.CharField(),
         prefix+'credit_card__cvv': forms.CharField(min_length=3, max_length=4),
@@ -117,7 +118,6 @@ def make_form(is_recurring=False):
         prefix+'postal_code': forms.CharField(max_length=30),
         prefix+'country_code_alpha2': forms.CharField(max_length=2),
     })
-        
+
     typename = 'CustomerForm' if is_recurring else 'PaymentForm'
     return type(typename, (_BasePaymentForm, forms.BaseForm,), {'base_fields': fields})
-
